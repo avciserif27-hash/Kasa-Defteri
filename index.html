@@ -546,17 +546,27 @@ function viewOzet(){
   const used = o.budget > 0 ? o.s.exp / o.budget : (o.s.exp > 0 ? 1.01 : 0);
   let h = "";
   if(!cfg.income) h += `<div class="notice"><b>Önce aylık gelirini yaz</b><span class="small muted">Harcayabileceğin tutar gelirine, taksitlerine ve birikim payına göre hesaplanır.</span><button class="btn primary" data-act="income">Geliri gir</button></div>`;
-  if(o.waiting) h += `<div class="notice"><b>Bu ayın maaşı henüz yatmadı</b><span class="small muted">Aşağıdaki tutar, ${tl(o.expInc)} gelirin yatınca taksitler, birikim payı ve bu ayki harcamaların düşüldükten sonra elinde kalacak olanı gösterir.${o.carry ? " Devreden paran: " + tl(o.carry) + "." : ""}</span>
+  if(o.waiting) h += `<div class="notice"><b>Bu ayın maaşı henüz yatmadı</b><span class="small muted">Maaş yatana kadar gelir sayılmaz; aşağıda bu ay harcadığın eksi olarak görünür. Maaş hesabına geçince "Maaş yattı" düğmesine bas.</span>
     <div class="acts"><button class="btn primary" data-act="gotSalary">Maaş yattı</button><button class="btn" data-act="income">Devreden parayı yaz</button></div></div>`;
   const ci = cardInfo();
   if(o.waiting){
-    const after = o.planBudget - o.s.exp, u2 = o.planBudget > 0 ? o.s.exp / o.planBudget : (o.s.exp > 0 ? 1.01 : 0);
-    h += `<section class="hero ${after < 0 ? "neg" : ""}"><div class="top"><div><div class="lbl">${after < 0 ? "Maaş yatınca bile açığın" : "Maaş yatınca harcayabileceğin"}</div><div class="big">${tl(Math.abs(after))}</div></div>${ringSvg(u2, "%" + Math.round(u2 * 100))}</div>
-      <div class="chips"><div class="chip"><span>Bu ay harcadığın</span><b>${tl0(o.s.exp)}</b></div><div class="chip"><span>Kart borcun</span><b>${tl0(ci.debt)}</b></div><div class="chip"><span>Maaşa</span><b>${o.payIn} gün</b></div></div></section>`;
+    /* Maaş yatmadı: gelen yalnızca devreden para, giden bu ayki harcamalar */
+    const now0 = o.carry - o.s.exp;
+    h += `<section class="hero ${now0 < 0 ? "neg" : ""}"><div><div class="lbl">Bu ayki durumun (maaş henüz yatmadı)</div><div class="big">${now0 < 0 ? "-" : ""}${tl(Math.abs(now0))}</div></div>
+      <div class="chips"><div class="chip"><span>Bu ay harcadığın</span><b>${tl0(o.s.exp)}</b></div><div class="chip"><span>Bu ay ödenecek borç</span><b>${tl0(o.fixed)}</b></div><div class="chip"><span>Maaşa</span><b>${o.payIn} gün</b></div></div></section>`;
   } else {
     h += `<section class="hero ${o.left < 0 ? "neg" : ""}"><div class="top"><div><div class="lbl">${o.left < 0 ? "Bu ay bütçeni aştığın tutar" : "Bu ay harcayabileceğin"}</div><div class="big">${tl(Math.abs(o.left))}</div></div>${ringSvg(used, "%" + Math.round(used * 100))}</div>
       <div class="chips"><div class="chip"><span>Bugün kalan</span><b>${tl0(Math.max(0, o.todayLeft))}</b></div><div class="chip"><span>Günlük pay</span><b>${tl0(o.daily)}</b></div><div class="chip"><span>${ci.debt > 0 ? "Kart borcun" : "Maaşa"}</span><b>${ci.debt > 0 ? tl0(ci.debt) : o.payIn + " gün"}</b></div></div></section>`;
   }
+  const sp = Math.max(o.planTarget, o.s.sav), res = o.expInc + o.carry - o.fixed - sp - o.s.exp;
+  h += `<section class="card"><h2>Bu ayın hesabı</h2><div class="list">
+    <div class="item"><div class="what"><b>Maaş ve gelir</b>${o.waiting ? '<span class="small muted">Henüz yatmadı, bekleniyor</span>' : ""}</div><span class="num">+${tl(o.expInc)}</span></div>
+    ${o.carry ? `<div class="item"><div class="what"><b>Devreden para</b></div><span class="num">+${tl(o.carry)}</span></div>` : ""}
+    <div class="item"><div class="what"><b>Taksit ve sabit ödemeler</b></div><span class="num">-${tl(o.fixed)}</span></div>
+    <div class="item"><div class="what"><b>Birikim payı</b><span class="small muted">Maaşın %${fmtN(cfg.sav.pct)} kadarı</span></div><span class="num">-${tl(sp)}</span></div>
+    <div class="item"><div class="what"><b>Bu ayki harcamalar</b></div><span class="num">-${tl(o.s.exp)}</span></div>
+    <div class="item"><div class="what"><b>${o.waiting ? "Maaş yatınca elinde kalacak" : "Harcayabileceğin kalan"}</b></div><span class="num" style="font-size:18px;color:var(--${res < 0 ? "bad" : "good"})">${res < 0 ? "-" : ""}${tl(Math.abs(res))}</span></div>
+  </div></section>`;
   const hk = Object.keys(cfg.hist).sort().slice(-12), hv = hk.map(x => cfg.hist[x].s - cfg.hist[x].d);
   h += `<div class="tiles"><div class="tile wide"><div class="row"><div><span>Net varlık (birikim eksi borç)</span><br><b>${tl0(net)}</b></div>${hv.length >= 2 ? sparkSvg(hv) : ""}</div>
       <span>${hv.length >= 2 ? `${hk.length} ayda ${hv[hv.length - 1] - hv[0] >= 0 ? "+" : ""}${tl0(hv[hv.length - 1] - hv[0])}` : "Aylar geçtikçe burada gidişatın çizilir."}</span></div>
