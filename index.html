@@ -106,7 +106,8 @@ h2{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
 .btn.danger{color:var(--bad)}
 .btn.on{background:var(--good);border-color:var(--good);color:#fff}
 .btn[disabled]{opacity:.4;cursor:default}
-.x{border:0;background:var(--field);color:var(--muted);border-radius:8px;min-width:34px;min-height:34px;font-size:13px}
+.x{border:0;background:var(--field);color:var(--muted);border-radius:8px;min-width:34px;min-height:34px;font-size:12px;padding:0 7px;font-weight:700}
+.item .side{gap:5px}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--field);border-radius:12px;padding:4px;gap:4px}
 .seg button{border:0;background:transparent;min-height:38px;font-weight:700;font-size:14px;color:var(--muted);border-radius:9px}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(15,24,48,.15)}
@@ -241,6 +242,7 @@ function normCfg(d){
 const normMonth = d => ({items: Array.isArray(d && d.items) ? d.items : [], got: !!(d && d.got), carry: +(d && d.carry) || 0});
 
 let cfg = defaults(), months = {}, entry = "", tab = "ozet", aiText = "";
+let lastPm = "n";
 let repKey = null, repMode = "kat", repDay = "", selCat = "", selBar = "", planExtra = 0;
 const store = {db:null, base:null}, touched = {}, writers = {}, fetched = {}, loading = {};
 const LS = "kasa-defteri:";
@@ -375,8 +377,16 @@ function savingsValue(){
   ["USD","EUR","XAU"].forEach(a => { if(h[a] > 0){ if(r[a] > 0) total += h[a] * r[a]; else missing = true; } });
   return {total, missing};
 }
+/* Kredi kartıyla yapılıp henüz ödenmemiş harcamalar */
+function cardInfo(){
+  const k = curKey(); let debt = 0, cur = 0;
+  Object.keys(months).forEach(mk => { months[mk].items.forEach(it => {
+    if(it.kind !== "sav" && it.pm === "kk" && !it.kkPaid){ debt += it.amt; if(mk === k) cur += it.amt; }
+  }); });
+  return {debt, cur};
+}
 function debtInfo(){
-  const k = curKey(); let debt = 0, due = 0, maxRem = 0, any = false, instMonthly = 0;
+  const k = curKey(); let debt = cardInfo().debt, due = 0, maxRem = 0, any = false, instMonthly = 0;
   cfg.pays.forEach(p => {
     if(isDue(p, k)) due += +p.amt || 0;
     if(p.type === "taksit"){
@@ -412,7 +422,7 @@ function advise(){
   if(fr > .5){ score -= 30; tips.push({lvl:"bad", text:`Gelirinin %${Math.round(fr * 100)} kadarı taksit ve sabit ödemelere gidiyor. Bu oran %35'in altına inene kadar yeni taksite girme.`}); }
   else if(fr > .35){ score -= 15; tips.push({lvl:"warn", text:`Gelirinin %${Math.round(fr * 100)} kadarı taksit ve sabit ödemelere gidiyor. Sağlıklı sınır %35 civarı; yeni borçta temkinli ol.`}); }
   else tips.push({lvl:"good", text:`Sabit ödemelerin gelirinin %${Math.round(fr * 100)} kadarı. Borç yükün yönetilebilir düzeyde.`});
-  if(o.waiting) tips.push({lvl:"", text:`Bu ayın maaşı henüz yatmadı. Şu an yalnızca devreden paranla hesaplıyorum; maaş yatınca ${tl(o.expInc)} eklenecek.`});
+  if(o.waiting) tips.push({lvl: o.planBudget - o.s.exp < 0 ? "bad" : "", text:`Bu ayın maaşı henüz yatmadı. Bu ay ${tl(o.s.exp)} harcadın; maaş yatınca harcayabileceğin ${tl(o.planBudget - o.s.exp)} kalacak.`});
   else if(o.budget <= 0){ score -= 30; tips.push({lvl:"bad", text:`Sabit ödemeler ve birikim payı gelirini ${tl(-o.budget)} aşıyor. Birikim yüzdesini düşür ya da bir sabit gideri azalt.`}); }
   else if(o.s.exp > o.budget){ score -= 25; tips.push({lvl:"bad", text:`Bu ayın harcama bütçesini ${tl(o.s.exp - o.budget)} aştın. Ay sonuna kadar yalnızca zorunlu harcama yap.`}); }
   else if(o.d >= 3){
@@ -438,6 +448,8 @@ function advise(){
     else tips.push({lvl:"good", text:`Birikimin ${fmtN(m, 1)} aylık giderini karşılıyor. Acil durum fonun hazır.`});
   }
   if(cfg.pays.some(p => p.type === "kart" && +p.min && +p.amt > +p.min)) tips.push({lvl:"", text:"Kredi kartında asgari tutarı değil ekstrenin tamamını öde; kalan borca faiz işler."});
+  const cdebt = cardInfo().debt;
+  if(cdebt > 0) tips.push({lvl:"", text:`Kredi kartı borcun ${tl(cdebt)}. Son ödeme gününden önce tamamını öde; asgari ödersen kalan borca faiz işler.`});
   const di = debtInfo();
   if(di.any) tips.push({lvl:"", text:`Taksitlerin ${monthName(di.end)} ayında bitiyor. O zaman ayda ${tl(di.instMonthly)} boşa çıkacak; bunu birikime yönlendir.`});
   score = Math.max(0, Math.min(100, Math.round(score)));
@@ -526,7 +538,7 @@ function lineItem(it, k){
     name = g ? "Hedef: " + g.name : "Birikim: " + ASSETS[it.asset].name; ini = "₺"; col = 3;
   } else { name = catName(it.cat); col = catCol(it.cat); ini = name.charAt(0).toLocaleUpperCase("tr-TR"); if(it.note) sub += " · " + it.note; }
   return `<div class="item"><i class="dot" style="--c:var(--s${col});font-style:normal">${esc(ini)}</i><div class="what"><b>${esc(name)}</b><span class="small muted">${esc(sub)}</span></div>
-    <div class="side"><span class="num">${it.kind === "sav" ? "" : "-"}${tl(it.amt)}</span><button class="x" data-act="delItem" data-id="${it.id}" data-k="${k}" aria-label="Kaydı sil">Sil</button></div></div>`;
+    <div class="side"><span class="num">${it.kind === "sav" ? "" : "-"}${tl(it.amt)}</span>${it.kind === "sav" ? "" : `<button class="x" data-act="togPm" data-id="${it.id}" data-k="${k}" aria-label="Ödeme şeklini değiştir">${it.pm === "kk" ? (it.kkPaid ? "Kart ✓" : "Kart") : "Nakit"}</button>`}<button class="x" data-act="delItem" data-id="${it.id}" data-k="${k}" aria-label="Kaydı sil">Sil</button></div></div>`;
 }
 function viewOzet(){
   const o = overview(), k = o.k, a = advise(), di = debtInfo(), sv = savingsValue().total, net = sv - di.debt, kr = karne();
@@ -534,10 +546,17 @@ function viewOzet(){
   const used = o.budget > 0 ? o.s.exp / o.budget : (o.s.exp > 0 ? 1.01 : 0);
   let h = "";
   if(!cfg.income) h += `<div class="notice"><b>Önce aylık gelirini yaz</b><span class="small muted">Harcayabileceğin tutar gelirine, taksitlerine ve birikim payına göre hesaplanır.</span><button class="btn primary" data-act="income">Geliri gir</button></div>`;
-  if(o.waiting) h += `<div class="notice"><b>Bu ayın maaşı henüz yatmadı</b><span class="small muted">Maaş sayılmıyor; hesap yalnızca devreden paranla (${tl(o.carry)}) yapılıyor. Yatınca ${tl(o.expInc)} eklenecek.</span>
+  if(o.waiting) h += `<div class="notice"><b>Bu ayın maaşı henüz yatmadı</b><span class="small muted">Aşağıdaki tutar, ${tl(o.expInc)} gelirin yatınca taksitler, birikim payı ve bu ayki harcamaların düşüldükten sonra elinde kalacak olanı gösterir.${o.carry ? " Devreden paran: " + tl(o.carry) + "." : ""}</span>
     <div class="acts"><button class="btn primary" data-act="gotSalary">Maaş yattı</button><button class="btn" data-act="income">Devreden parayı yaz</button></div></div>`;
-  h += `<section class="hero ${o.left < 0 ? "neg" : ""}"><div class="top"><div><div class="lbl">Bu ay harcayabileceğin</div><div class="big">${tl(o.left)}</div></div>${ringSvg(used, "%" + Math.round(used * 100))}</div>
-    <div class="chips"><div class="chip"><span>Bugün kalan</span><b>${tl0(Math.max(0, o.todayLeft))}</b></div><div class="chip"><span>Günlük pay</span><b>${tl0(o.daily)}</b></div><div class="chip"><span>Maaşa</span><b>${o.payIn} gün</b></div></div></section>`;
+  const ci = cardInfo();
+  if(o.waiting){
+    const after = o.planBudget - o.s.exp, u2 = o.planBudget > 0 ? o.s.exp / o.planBudget : (o.s.exp > 0 ? 1.01 : 0);
+    h += `<section class="hero ${after < 0 ? "neg" : ""}"><div class="top"><div><div class="lbl">${after < 0 ? "Maaş yatınca bile açığın" : "Maaş yatınca harcayabileceğin"}</div><div class="big">${tl(Math.abs(after))}</div></div>${ringSvg(u2, "%" + Math.round(u2 * 100))}</div>
+      <div class="chips"><div class="chip"><span>Bu ay harcadığın</span><b>${tl0(o.s.exp)}</b></div><div class="chip"><span>Kart borcun</span><b>${tl0(ci.debt)}</b></div><div class="chip"><span>Maaşa</span><b>${o.payIn} gün</b></div></div></section>`;
+  } else {
+    h += `<section class="hero ${o.left < 0 ? "neg" : ""}"><div class="top"><div><div class="lbl">${o.left < 0 ? "Bu ay bütçeni aştığın tutar" : "Bu ay harcayabileceğin"}</div><div class="big">${tl(Math.abs(o.left))}</div></div>${ringSvg(used, "%" + Math.round(used * 100))}</div>
+      <div class="chips"><div class="chip"><span>Bugün kalan</span><b>${tl0(Math.max(0, o.todayLeft))}</b></div><div class="chip"><span>Günlük pay</span><b>${tl0(o.daily)}</b></div><div class="chip"><span>${ci.debt > 0 ? "Kart borcun" : "Maaşa"}</span><b>${ci.debt > 0 ? tl0(ci.debt) : o.payIn + " gün"}</b></div></div></section>`;
+  }
   const hk = Object.keys(cfg.hist).sort().slice(-12), hv = hk.map(x => cfg.hist[x].s - cfg.hist[x].d);
   h += `<div class="tiles"><div class="tile wide"><div class="row"><div><span>Net varlık (birikim eksi borç)</span><br><b>${tl0(net)}</b></div>${hv.length >= 2 ? sparkSvg(hv) : ""}</div>
       <span>${hv.length >= 2 ? `${hk.length} ayda ${hv[hv.length - 1] - hv[0] >= 0 ? "+" : ""}${tl0(hv[hv.length - 1] - hv[0])}` : "Aylar geçtikçe burada gidişatın çizilir."}</span></div>
@@ -569,13 +588,13 @@ function viewKasa(){
   const k = curKey(), todayStr = new Date().toDateString();
   const today = month(k).items.filter(it => it.kind !== "sav" && new Date(it.ts).toDateString() === todayStr);
   const total = today.reduce((a, it) => a + it.amt, 0);
-  const opts = [1,2,3,4,5,6,9,12,18,24,36].map(n => `<option value="${n}">${n === 1 ? "Peşin" : n + " taksit"}</option>`).join("");
+  const opts = [["n","Nakit / banka kartı"],["k1","Kredi kartı (tek çekim)"]].concat([2,3,4,5,6,9,12,18,24,36].map(n => ["k" + n, "Kredi kartı " + n + " taksit"])).map(o => `<option value="${o[0]}">${o[1]}</option>`).join("");
   let h = `<section class="card"><div class="amount"><span class="small muted">Tutarı yaz, kategoriye dokun</span><div class="big" id="entry">${esc(entry || "0")} ₺</div></div>
     <div class="cats">` + cfg.cats.map(c => `<button class="cat" data-cat="${c.id}"><i class="dot" style="--c:var(--s${c.col || 0});font-style:normal">${esc(c.name.charAt(0).toLocaleUpperCase("tr-TR"))}</i><span>${esc(c.name)}</span></button>`).join("") + `</div>
     <div class="keys">` + ["1","2","3","4","5","6","7","8","9",",","0","sil"].map(x =>
     `<button class="key" data-key="${x}" ${x === "sil" ? 'aria-label="Son rakamı sil"' : ""}>${x === "sil" ? "⌫" : x}</button>`).join("") + `</div>
     <div class="pair"><label>Ödeme şekli<select id="inst">${opts}</select></label><label>Not (isteğe bağlı)<input id="note" maxlength="40" autocomplete="off"></label></div>
-    <span class="small muted">Taksitli seçersen tutar taksit sayısına bölünür ve Borçlar'a eklenir.</span></section>`;
+    <span class="small muted">Kredi kartı seçersen harcama kart borcuna da yazılır. Taksitli olanlar aylara bölünüp Borçlar'a eklenir.</span></section>`;
   h += `<section class="card"><div class="row"><h2>Bugün</h2><span class="num">${tl(total)}</span></div>`;
   h += today.length ? `<div class="list">${today.slice().reverse().map(it => lineItem(it, k)).join("")}</div>` : `<span class="small muted">Bugün henüz harcama girmedin.</span>`;
   return h + `</section><button class="btn sm ghost" data-act="cats">Kategorileri düzenle</button>`;
@@ -587,6 +606,10 @@ function viewBorclar(){
   let h = `<div class="tiles"><div class="tile"><span>Toplam kalan borç</span><b>${tl0(di.debt)}</b></div><div class="tile"><span>Bu ay ödenecek</span><b>${tl0(di.due)}</b></div>
     <div class="tile"><span>Taksitlerin bitişi</span><b>${di.any ? esc(monthName(di.end, {month:"short", year:"numeric"})) : "Yok"}</b></div>
     <div class="tile"><span>Gelire oranı</span><b>${inc ? "%" + Math.round(di.due / inc * 100) : "Gelir yok"}</b></div></div>`;
+  const ci = cardInfo();
+  h += `<section class="card"><div class="row"><h2>Kredi kartı borcu</h2><span class="num">${tl(ci.debt)}</span></div>` + (ci.debt > 0
+    ? `<span class="small muted">Kartla yapıp henüz ödemediğin harcamalar. Bu ay kartla harcanan: ${tl(ci.cur)}. Taksitli alışverişler aşağıda ayrıca durur.</span><button class="btn" data-act="askPayCard">Kart borcunu ödedim</button>`
+    : `<span class="small muted">Harcama eklerken "Kredi kartı" seçersen burada birikir. Eski bir kaydı karta çevirmek için satırındaki "Nakit" düğmesine dokun.</span>`) + `</section>`;
   h += `<section class="card"><div class="row"><h2>Taksitler ve ödemeler</h2><button class="btn sm primary" data-act="addPay">Ekle</button></div>`;
   if(!cfg.pays.length) h += `<span class="small muted">Banka taksitlerini, kredi kartını, kira ve fatura gibi sabit ödemelerini buraya ekle. Her ay gelirinden kendiliğinden düşülür.</span>`;
   else h += `<div class="list">` + cfg.pays.slice().sort((a, b) => (+a.day || 1) - (+b.day || 1)).map(p => {
@@ -618,7 +641,7 @@ function viewBorclar(){
       h += `<span class="small muted">Hesap faizsiz ve erken ödeme indirimi olmadan yapılır; bankan erken kapamada indirim uygulayabilir.</span>`;
     }
   }
-  return h + `</section><p class="small muted" style="margin:0">Kredi kartında her ay ekstre tutarını güncelle. Kartla yaptığın alışverişleri ayrıca harcama olarak girersen iki kez sayılır.</p>`;
+  return h + `</section><p class="small muted" style="margin:0">Kartla yaptığın harcamaları eklerken "Kredi kartı" seç; ayrıca ekstre girmene gerek yok.</p>`;
 }
 
 /* Gelecek aylar: hangi ay hangi taksit ve sabit ödeme var */
@@ -747,7 +770,7 @@ function viewAnaliz(){
 function render(){
   $("#ay").textContent = monthName(new Date());
   document.querySelectorAll("nav a").forEach(a => a.dataset.tab === tab ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-  const note = $("#note") ? $("#note").value : "", inst = $("#inst") ? $("#inst").value : "1";
+  const note = $("#note") ? $("#note").value : "", inst = $("#inst") ? $("#inst").value : lastPm;
   $("#main").innerHTML = ({ozet:viewOzet, kasa:viewKasa, borclar:viewBorclar, birikim:viewBirikim, analiz:viewAnaliz}[tab] || viewOzet)();
   if($("#note")){ $("#note").value = note; $("#inst").value = inst; }
 }
@@ -780,8 +803,8 @@ function sheetSettings(){
     <div class="stack"><button type="button" class="btn danger" data-act="askResetMonth">Bu ayın harcamalarını sil</button>
     <button type="button" class="btn danger" data-act="askResetAll">Tüm verileri sıfırla</button></div>`);
 }
-function sheetConfirm(title, text, act){
-  openSheet(title, `<span>${esc(text)}</span><div class="acts"><button type="button" class="btn" data-act="close">Vazgeç</button><button type="button" class="btn primary" data-act="${act}">Evet, sil</button></div>`);
+function sheetConfirm(title, text, act, yes){
+  openSheet(title, `<span>${esc(text)}</span><div class="acts"><button type="button" class="btn" data-act="close">Vazgeç</button><button type="button" class="btn primary" data-act="${act}">${yes || "Evet, sil"}</button></div>`);
 }
 function sheetIncome(){
   const row = e => `<div class="erow" data-row><input aria-label="Ek gelir adı" data-f="name" placeholder="Örn. kira geliri" value="${esc(e.name || "")}"><input aria-label="Tutar" data-f="amt" inputmode="decimal" placeholder="Tutar" value="${inp(e.amt)}"><button type="button" class="x" data-act="rmRow" aria-label="Satırı sil">✕</button></div>`;
@@ -826,7 +849,7 @@ function sheetPay(id){
   openSheet(p.id ? "Ödemeyi düzenle" : "Ödeme ekle", `<label>Tür<select id="fType">
       <option value="taksit">Taksit (banka kredisi, taksitli alışveriş, borç)</option>
       <option value="sabit">Sabit ödeme (kira, fatura, abonelik)</option>
-      <option value="kart">Kredi kartı ekstresi</option></select></label>
+      ${p.type === "kart" ? '<option value="kart">Kredi kartı ekstresi</option>' : ""}</select></label>
     <label>Ad<input id="fName" maxlength="40" placeholder="Örn. ihtiyaç kredisi" value="${esc(p.name || "")}"></label>
     <div class="pair"><label><span id="lAmt">Aylık tutar (₺)</span><input id="fAmt" inputmode="decimal" value="${inp(+p.amt)}"></label>
     <label>Ödeme günü<input id="fDay" inputmode="numeric" value="${p.day || ""}" placeholder="1-31"></label></div>
@@ -991,7 +1014,7 @@ async function askAdvisor(){
       toplam_birikim_tl:savingsValue().total, hedefler:cfg.goals.map(g => ({ad:g.name, hedef:g.target, biriken:g.saved, aylik:g.monthly})),
       harcama_butcesi:o.budget, bu_ay_harcanan:o.s.exp, kalan:o.left, gunluk_pay:o.daily,
       kategoriler:cfg.cats.map(c => ({ad:c.name, bu_ay:ct.by[c.id] || 0, gecen_ay:pt.by[c.id] || 0, limit:+c.limit || undefined})),
-      saglik_puani:a.score, bu_ay_maas_yatti:o.got, devreden_para:o.carry
+      saglik_puani:a.score, odenmemis_kredi_karti_harcamasi:cardInfo().debt, bu_ay_maas_yatti:o.got, devreden_para:o.carry
     };
     const prompt = "Sen dikkatli ve dürüst bir kişisel bütçe danışmanısın. Aşağıda bir kişinin bu ayki gelir gider verisi var (tutarlar TL). " +
       "Türkçe, sade ve doğrudan yaz. Önce bir cümlelik genel durum, sonra en fazla 5 kısa ve somut öneri ver; her öneride veriden bir rakam kullan. " +
@@ -1009,17 +1032,18 @@ async function askAdvisor(){
 function addExpense(catId){
   const amt = parseNum(entry);
   if(!amt){ toast("Önce tutarı yaz."); return; }
-  const k = curKey(), note = $("#note") ? $("#note").value.trim() : "", n = $("#inst") ? parseInt($("#inst").value, 10) || 1 : 1;
+  const k = curKey(), note = $("#note") ? $("#note").value.trim() : "", pmv = $("#inst") ? $("#inst").value : "n", kk = pmv.charAt(0) === "k", n = kk ? parseInt(pmv.slice(1), 10) || 1 : 1;
   let msg;
   if(n > 1){
     const per = Math.round(amt / n * 100) / 100, card = cfg.pays.find(p => p.type === "kart");
     cfg.pays.push({id:uid(), type:"taksit", name:(note || catName(catId)) + " (" + n + " taksit)", amt:per, day:card ? +card.day || 1 : new Date().getDate(), total:n, paid:[], cat:catId, ts:Date.now()});
     saveCfg(); msg = n + " × " + tl(per) + " taksit olarak Borçlar'a eklendi.";
   } else {
-    month(k).items.push({id:uid(), ts:Date.now(), kind:"exp", amt, cat:catId, note});
-    saveMonth(k); msg = tl(amt) + " " + catName(catId) + " olarak kaydedildi.";
+    month(k).items.push({id:uid(), ts:Date.now(), kind:"exp", amt, cat:catId, note, pm: kk ? "kk" : "n"});
+    saveMonth(k); if(kk) saveCfg(); msg = tl(amt) + " " + catName(catId) + " olarak kaydedildi" + (kk ? "; kart borcuna eklendi." : ".");
   }
-  entry = ""; if($("#note")){ $("#note").value = ""; $("#inst").value = "1"; }
+  lastPm = kk ? "k1" : "n";
+  entry = ""; if($("#note")){ $("#note").value = ""; $("#inst").value = lastPm; }
   const c = catOf(catId), spent = catTotals(k).by[catId] || 0;
   if(c && +c.limit && spent >= c.limit) msg = c.name + " limitini aştın: " + tl(spent) + " / " + tl(+c.limit);
   else if(c && +c.limit && spent >= c.limit * .8) msg = c.name + " limitine yaklaştın: " + tl(spent) + " / " + tl(+c.limit);
@@ -1058,6 +1082,16 @@ document.addEventListener("click", ev => {
   else if(act === "ask") askAdvisor();
   else if(act === "backup") doBackup();
   else if(act === "gotSalary"){ month(k).got = true; saveMonth(k); toast(tl(incomeTotal()) + " gelir bu aya eklendi."); render(); }
+  else if(act === "askPayCard") sheetConfirm("Kart borcu ödendi mi?", "Kartla yaptığın ödenmemiş bütün harcamalar ödendi sayılır ve kart borcun sıfırlanır. Harcamalar geçmişte durmaya devam eder.", "doPayCard", "Evet, ödedim");
+  else if(act === "doPayCard"){
+    Object.keys(months).forEach(mk => { let ch = false; months[mk].items.forEach(it => { if(it.pm === "kk" && !it.kkPaid){ it.kkPaid = true; ch = true; } }); if(ch) saveMonth(mk); });
+    saveCfg(); closeSheet(); toast("Kart borcu ödendi olarak işaretlendi."); render();
+  }
+  else if(act === "togPm"){
+    const mk = b.dataset.k || k, it = month(mk).items.find(x => x.id === id); if(!it) return;
+    if(it.pm === "kk"){ it.pm = "n"; delete it.kkPaid; } else it.pm = "kk";
+    saveMonth(mk); saveCfg(); render();
+  }
   else if(act === "seg"){ selCat = selCat === id ? "" : id; render(); }
   else if(act === "bar"){ selBar = id; render(); }
   else if(act === "askResetMonth") sheetConfirm("Bu ayın harcamaları silinsin mi?", "Bu ay girdiğin bütün harcamalar ve bu ay eklediğin taksitli alışverişler silinir. Gelir, diğer borçlar, birikim ve geçmiş aylar olduğu gibi kalır. Geri alınamaz.", "doResetMonth");
