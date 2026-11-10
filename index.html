@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kasa Defteri">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f0f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#090d18" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Kasa Defteri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Düzen: banka uygulaması gibi tek sütun; üstte koyu bakiye kartı, altında beyaz kartlar, altta ortasında ekleme düğmesi olan sekme çubuğu. */
+:root{
+  --bg:#f0f2f7; --surface:#ffffff; --ink:#0f1830; --muted:#5c667d; --line:#e3e7ef; --field:#f0f2f7;
+  --accent:#16234a; --accent-ink:#ffffff; --gold:#f2b632;
+  --good:#0f7a34; --warn:#946400; --bad:#c22f2f;
+  --s0:#b3b9c6; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --grid:#e3e7ef;
+  --display:"Outfit","Trebuchet MS",sans-serif;
+  --body:"Plus Jakarta Sans","Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#090d18; --surface:#131a2b; --ink:#eef1f8; --muted:#98a2b9; --line:#232c42; --field:#0c1220;
+    --accent:#f2b632; --accent-ink:#1a1300;
+    --good:#3ccb72; --warn:#f0b23c; --bad:#f27878;
+    --s0:#5a6379; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --grid:#232c42;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#090d18; --surface:#131a2b; --ink:#eef1f8; --muted:#98a2b9; --line:#232c42; --field:#0c1220;
+  --accent:#f2b632; --accent-ink:#1a1300;
+  --good:#3ccb72; --warn:#f0b23c; --bad:#f27878;
+  --s0:#5a6379; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --grid:#232c42;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(16px + env(safe-area-inset-top)) 16px 6px}
+header>div{display:flex;flex-direction:column;min-width:0}
+h1{font-family:var(--display);font-weight:800;font-size:22px;margin:0;letter-spacing:-.01em}
+.sub{font-size:12px;color:var(--muted)}
+main{flex:1;padding:8px 16px calc(110px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px}
+h2{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+.muted{color:var(--muted)} .small{font-size:13px}
+
+/* Bakiye kartı: iki temada da koyu kalır */
+.hero{border-radius:22px;padding:18px;color:#fff;display:flex;flex-direction:column;gap:14px;
+  background:radial-gradient(120% 90% at 100% 0%,#2b4288 0%,transparent 60%),radial-gradient(90% 80% at 0% 100%,#5a4208 0%,transparent 55%),#0f1836;
+  box-shadow:0 14px 30px rgba(15,24,54,.35)}
+.hero .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hero .lbl{font-size:13px;color:#c5cde4}
+.hero .big{font-family:var(--display);font-weight:800;font-size:clamp(32px,10.5vw,44px);line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.hero.neg .big{color:#ffb4a8}
+.hero .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hero .chip{background:rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.hero .chip span{font-size:11px;color:#c5cde4}
+.hero .chip b{font-family:var(--display);font-size:15px;overflow-wrap:anywhere}
+.ring text{font-family:var(--display);font-weight:700}
+
+.card{background:var(--surface);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(15,24,48,.06)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0;box-shadow:0 1px 2px rgba(15,24,48,.06)}
+.tile span{font-size:12px;color:var(--muted)}
+.tile b{font-family:var(--display);font-size:18px;overflow-wrap:anywhere}
+.tile.wide{grid-column:1/-1}
+.list{display:flex;flex-direction:column}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0;padding-top:0}
+.item:last-child{padding-bottom:0}
+.item .what{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}
+.item .what b{font-weight:700;overflow-wrap:anywhere}
+.item .side{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.dot{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:700;flex-shrink:0;background:var(--c,var(--s0))}
+.dot.sm{width:12px;height:12px;border-radius:4px}
+.mon{border-top:1px solid var(--line);padding-top:10px}
+.mon summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;min-height:36px}
+.mon summary::-webkit-details-marker{display:none}
+.mon summary>span:first-child{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mon summary>span:first-child::before{content:"›";font-weight:700;color:var(--muted);display:inline-block;width:10px}
+.mon[open] summary>span:first-child::before{transform:rotate(90deg)}
+.mon .list{padding:8px 0 4px 16px}
+.dayhead{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--muted);padding-top:6px}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:700;min-height:44px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:36px;padding:6px 10px;font-size:13px}
+.btn.danger{color:var(--bad)}
+.btn.on{background:var(--good);border-color:var(--good);color:#fff}
+.btn[disabled]{opacity:.4;cursor:default}
+.x{border:0;background:var(--field);color:var(--muted);border-radius:8px;min-width:34px;min-height:34px;font-size:13px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--field);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;min-height:38px;font-weight:700;font-size:14px;color:var(--muted);border-radius:9px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(15,24,48,.15)}
+
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;background:var(--field);color:var(--muted)}
+.pill.good{color:var(--good)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)}
+.bar{height:8px;background:var(--field);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--s1);border-radius:99px}
+.bar.warn>i{background:var(--warn)} .bar.bad>i{background:var(--bad)} .bar.good>i{background:var(--good)} .bar.gold>i{background:var(--gold)}
+.notice{border:1.5px dashed var(--gold);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.tips{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.tips li{display:flex;gap:10px;font-size:14px;align-items:flex-start}
+.tips li::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--muted);margin-top:7px;flex-shrink:0}
+.tips li.good::before{background:var(--good)} .tips li.warn::before{background:var(--warn)} .tips li.bad::before{background:var(--bad)}
+.ai{white-space:pre-wrap;background:var(--field);border-radius:12px;padding:12px;font-size:14px}
+.grade{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:30px;background:var(--field);flex-shrink:0}
+.check{display:flex;gap:8px;font-size:14px;align-items:flex-start}
+.check i{font-style:normal;font-weight:700;width:18px;flex-shrink:0}
+.check.ok i{color:var(--good)} .check.no i{color:var(--bad)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
+.legend span{display:flex;align-items:center;gap:6px}
+svg text{font-family:var(--body);fill:var(--muted);font-size:10px}
+.donutwrap{display:flex;justify-content:center}
+
+/* Kasa */
+.amount{text-align:center;display:flex;flex-direction:column;gap:2px;padding:8px 0}
+.amount .big{font-family:var(--display);font-weight:800;font-size:clamp(40px,13vw,56px);line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.key{border:0;background:var(--field);border-radius:14px;min-height:54px;font-family:var(--display);font-size:24px;font-weight:700}
+.key:active,.cat:active{transform:scale(.96)}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cat{border:0;background:transparent;padding:6px 2px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;min-width:0}
+.cat .dot{width:48px;height:48px;border-radius:16px;font-size:20px}
+.cat span{max-width:100%;overflow-wrap:anywhere;text-align:center;line-height:1.2}
+
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+nav div{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
+nav a{padding:8px 2px 12px;text-align:center;text-decoration:none;color:var(--muted);font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav a[aria-current="page"]{color:var(--ink)}
+nav a.fab span{width:54px;height:54px;border-radius:99px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-22px;box-shadow:0 8px 18px rgba(15,24,54,.35);border:4px solid var(--surface)}
+nav a.fab svg{width:26px;height:26px;stroke-width:2.6}
+
+.veil{position:fixed;inset:0;background:rgba(5,8,18,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.veil.open{display:flex}
+.sheet{background:var(--surface);width:100%;max-width:480px;max-height:88%;overflow-y:auto;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.sheet form{display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:500;color:var(--muted)}
+input,select{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px;color:var(--ink);font-size:16px;width:100%;min-width:0}
+.chk{flex-direction:row;align-items:center;gap:10px;font-size:15px;color:var(--ink)}
+.chk input{width:24px;height:24px;min-height:24px;padding:0;flex-shrink:0;accent-color:var(--gold)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.erow{display:grid;grid-template-columns:1fr 104px 40px;gap:6px;align-items:center}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.acts .btn{flex:1}
+.stack{display:flex;flex-direction:column;gap:8px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));max-width:448px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}.key:active,.cat:active{transform:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div><h1>Kasa Defteri</h1><span class="sub"><span id="ay"></span> · <span id="sync">Yükleniyor</span></span></div>
+    <button class="btn sm" data-act="settings">Ayarlar</button>
+  </header>
+  <main id="main"></main>
+</div>
+<nav aria-label="Bölümler"><div>
+  <a href="#ozet" data-tab="ozet"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Özet</a>
+  <a href="#analiz" data-tab="analiz"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Analiz</a>
+  <a href="#kasa" data-tab="kasa" class="fab" aria-label="Harcama ekle"><span><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Ekle</a>
+  <a href="#borclar" data-tab="borclar"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M7 15h3"/></svg>Borçlar</a>
+  <a href="#birikim" data-tab="birikim"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M15 9.5h-4.2a1.6 1.6 0 0 0 0 3.2h2.4a1.6 1.6 0 0 1 0 3.2H9"/></svg>Birikim</a>
+</div></nav>
+<div class="veil" id="veil"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="row"><h2 id="sheetTitle"></h2><button class="btn sm ghost" type="button" data-act="close">Kapat</button></div>
+  <form id="sheetForm" novalidate></form>
+</div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, "0");
+const ym = d => d.getFullYear() + "-" + pad(d.getMonth() + 1);
+const ymd = d => ym(d) + "-" + pad(d.getDate());
+const keyDate = k => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1);
+const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+const clone = o => JSON.parse(JSON.stringify(o));
+const monthName = (d, o) => d.toLocaleDateString("tr-TR", o || {month:"long", year:"numeric"});
+const ASSETS = {TRY:{name:"Türk lirası",unit:"₺"},USD:{name:"Dolar",unit:"$"},EUR:{name:"Euro",unit:"€"},XAU:{name:"Gram altın",unit:"gr"}};
+
+function parseNum(s){
+  s = String(s ?? "").trim().replace(/\s/g, "");
+  if(!s) return 0;
+  if(s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  else if(!/^\d+\.\d{1,2}$/.test(s)) s = s.replace(/\./g, "");
+  const n = parseFloat(s);
+  return isFinite(n) && n > 0 ? n : 0;
+}
+function fmtN(n, max){
+  n = Math.round(n * 100) / 100;
+  return n.toLocaleString("tr-TR", {minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: max ?? 2});
+}
+const tl = n => fmtN(n) + " ₺";
+const tl0 = n => Math.round(n).toLocaleString("tr-TR") + " ₺";
+const inp = n => n ? String(Math.round(n * 100) / 100).replace(".", ",") : "";
+
+/* ---------- Veri ---------- */
+function defaults(){
+  return {v:2, income:0, payday:1, extras:[],
+    cats:["Yemek","Market","Ulaşım","Fatura","Özel","Sağlık","Giyim","Diğer"].map((name,i)=>({id:"c"+(i+1),name,limit:0,col:i+1})),
+    pays:[], goals:[], hist:{}, sav:{pct:20, rates:{USD:0,EUR:0,XAU:0}, ratesAt:0, hold:{TRY:0,USD:0,EUR:0,XAU:0}}};
+}
+function normCfg(d){
+  const b = defaults(); d = d || {};
+  const c = Object.assign(b, d);
+  c.extras = Array.isArray(d.extras) ? d.extras : [];
+  c.cats = (Array.isArray(d.cats) && d.cats.length ? d.cats : b.cats).map((x, i) => Object.assign({}, x, {col: x.col || (i < 8 ? i + 1 : 0)}));
+  c.pays = (Array.isArray(d.pays) ? d.pays : []).map(p => Object.assign({}, p, {paid: Array.isArray(p.paid) ? p.paid : []}));
+  c.goals = Array.isArray(d.goals) ? d.goals : [];
+  c.hist = d.hist && typeof d.hist === "object" ? d.hist : {};
+  const s = d.sav || {};
+  c.sav = {pct: +s.pct >= 0 ? +s.pct : 20, rates:Object.assign({USD:0,EUR:0,XAU:0}, s.rates), ratesAt:+s.ratesAt || 0, hold:Object.assign({TRY:0,USD:0,EUR:0,XAU:0}, s.hold)};
+  return c;
+}
+const normMonth = d => ({items: Array.isArray(d && d.items) ? d.items : [], got: !!(d && d.got), carry: +(d && d.carry) || 0});
+
+let cfg = defaults(), months = {}, entry = "", tab = "ozet", aiText = "";
+let repKey = null, repMode = "kat", repDay = "", selCat = "", selBar = "", planExtra = 0;
+const store = {db:null, base:null}, touched = {}, writers = {}, fetched = {}, loading = {};
+const LS = "kasa-defteri:";
+const lsGet = k => { try { return JSON.parse(localStorage.getItem(LS + k)); } catch(e){ return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch(e){} };
+
+function setSync(state){
+  $("#sync").textContent = {ok:"Kaydedildi", saving:"Kaydediliyor", local:"Bu telefonda kayıtlı", err:"Kaydedilemedi", load:"Yükleniyor"}[state];
+}
+function persist(name, get){
+  lsSet(name, get()); touched[name] = true;
+  if(!store.db) return;
+  const w = writers[name] || (writers[name] = {busy:false, dirty:false});
+  if(w.busy){ w.dirty = true; return; }
+  w.busy = true; setSync("saving");
+  let failed = false;
+  store.db.doc(store.base + "/" + name).set(clone(get()))
+    .catch(() => { failed = true; })
+    .then(() => {
+      w.busy = false;
+      if(w.dirty){ w.dirty = false; persist(name, get); }
+      else setSync(failed ? "err" : "ok");
+    });
+}
+function saveCfg(){
+  /* Net varlık geçmişi: her ayın son durumu saklanır */
+  const k = curKey();
+  cfg.hist[k] = {s: Math.round(savingsValue().total), d: Math.round(debtInfo().debt)};
+  Object.keys(cfg.hist).sort().slice(0, -24).forEach(x => delete cfg.hist[x]);
+  persist("config", () => cfg);
+}
+const saveMonth = k => persist("m-" + k, () => month(k));
+const month = k => months[k] || (months[k] = {items:[], got:false, carry:0});
+const curKey = () => ym(new Date());
+const prevOf = k => ym(addMonths(keyDate(k), -1));
+
+function ensureMonth(k){
+  if(fetched[k] || loading[k]) return;
+  if(!months[k]) months[k] = normMonth(lsGet("m-" + k));
+  if(!store.db) return;
+  loading[k] = true;
+  store.db.doc(store.base + "/m-" + k).get().then(s => {
+    if(s.exists && !touched["m-" + k]){ months[k] = normMonth(clone(s.data())); lsSet("m-" + k, months[k]); }
+    fetched[k] = true;
+  }).catch(() => {}).then(() => { loading[k] = false; render(); });
+}
+function loadLocal(){
+  const c = lsGet("config"); if(c) cfg = normCfg(c);
+  [curKey(), prevOf(curKey())].forEach(k => { months[k] = normMonth(lsGet("m-" + k)); });
+}
+async function connect(){
+  try{
+    if(!(window.claude && window.claude.use)) return setSync("local");
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const id = user ? await user.id() : null;
+    if(!db || !id) return setSync("local");
+    const base = "data/users/" + id;
+    const names = ["config", "m-" + curKey(), "m-" + prevOf(curKey())];
+    const snaps = await Promise.race([
+      Promise.all(names.map(n => db.doc(base + "/" + n).get())),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000))
+    ]);
+    names.forEach((n, i) => {
+      if(snaps[i].exists && !touched[n]){
+        const d = clone(snaps[i].data());
+        if(n === "config") cfg = normCfg(d); else months[n.slice(2)] = normMonth(d);
+        lsSet(n, d);
+      }
+      if(n !== "config") fetched[n.slice(2)] = true;
+    });
+    store.db = db; store.base = base;
+    setSync("ok");
+    names.forEach((n, i) => {
+      if((!snaps[i].exists || touched[n]) && lsGet(n)) persist(n, n === "config" ? () => cfg : () => month(n.slice(2)));
+    });
+    render();
+  }catch(e){ setSync("local"); }
+}
+
+/* ---------- Hesaplar ---------- */
+const incomeTotal = () => (+cfg.income || 0) + cfg.extras.reduce((s, e) => s + (+e.amt || 0), 0);
+const remaining = p => p.type === "taksit" ? Math.max(0, (+p.total || 0) - p.paid.length) : null;
+const isDue = (p, k) => p.type === "taksit" ? (p.paid.includes(k) || remaining(p) > 0) : (+p.amt > 0);
+const isPaid = (p, k) => p.paid.includes(k);
+function sums(k){
+  const r = {exp:0, sav:0, byCat:{}};
+  month(k).items.forEach(it => {
+    if(it.kind === "sav") r.sav += it.amt;
+    else { r.exp += it.amt; r.byCat[it.cat] = (r.byCat[it.cat] || 0) + it.amt; }
+  });
+  return r;
+}
+/* Kategori toplamları: kasadan girilen harcamalar + o aya düşen taksitli alışveriş taksitleri */
+function catTotals(k){
+  const s = sums(k), by = Object.assign({}, s.byCat); let inst = 0;
+  cfg.pays.forEach(p => {
+    if(p.type === "taksit" && p.cat && (k === curKey() ? isDue(p, k) : p.paid.includes(k))){ by[p.cat] = (by[p.cat] || 0) + (+p.amt || 0); inst += +p.amt || 0; }
+  });
+  return {by, total: s.exp + inst, inst};
+}
+function overview(){
+  const k = curKey(), s = sums(k);
+  const fixed = cfg.pays.filter(p => isDue(p, k)).reduce((a, p) => a + (+p.amt || 0), 0);
+  /* Maaş yatana kadar gelir sayılmaz; yalnızca devreden para kullanılır */
+  const m = month(k), got = !!m.got, carry = +m.carry || 0, expInc = incomeTotal();
+  const planTarget = (+cfg.income || 0) * cfg.sav.pct / 100;
+  const target = got ? planTarget : 0;
+  const savPart = Math.max(target, s.sav);
+  const inc = (got ? expInc : 0) + carry;
+  const planBudget = expInc + carry - fixed - Math.max(planTarget, s.sav);
+  const budget = inc - fixed - savPart;
+  const left = budget - s.exp;
+  const now = new Date(), d = now.getDate();
+  const dim = (y, m) => new Date(y, m + 1, 0).getDate();
+  const mdays = dim(now.getFullYear(), now.getMonth());
+  const days = mdays - d + 1;
+  const todayStr = now.toDateString();
+  const todaySpent = month(k).items.filter(it => it.kind !== "sav" && new Date(it.ts).toDateString() === todayStr).reduce((a, it) => a + it.amt, 0);
+  const daily = Math.max(0, (left + todaySpent) / days);
+  const pd = Math.min(Math.max(1, +cfg.payday || 1), 31);
+  let next = new Date(now.getFullYear(), now.getMonth(), Math.min(pd, mdays));
+  if(d >= next.getDate()){ const n = addMonths(now, 1); next = new Date(n.getFullYear(), n.getMonth(), Math.min(pd, dim(n.getFullYear(), n.getMonth()))); }
+  const payIn = Math.max(1, Math.round((next - new Date(now.getFullYear(), now.getMonth(), d)) / 864e5));
+  return {k, s, fixed, target, savPart, inc, got, carry, expInc, waiting: !got && expInc > 0, planTarget, planBudget, budget, left, days, d, mdays, daily, todaySpent, todayLeft: daily - todaySpent, payIn};
+}
+const catOf = id => cfg.cats.find(c => c.id === id);
+const catName = id => (catOf(id) || {name:"Silinmiş kategori"}).name;
+const catCol = id => (catOf(id) || {col:0}).col || 0;
+function savingsValue(){
+  const h = cfg.sav.hold, r = cfg.sav.rates;
+  let total = h.TRY || 0, missing = false;
+  ["USD","EUR","XAU"].forEach(a => { if(h[a] > 0){ if(r[a] > 0) total += h[a] * r[a]; else missing = true; } });
+  return {total, missing};
+}
+function debtInfo(){
+  const k = curKey(); let debt = 0, due = 0, maxRem = 0, any = false, instMonthly = 0;
+  cfg.pays.forEach(p => {
+    if(isDue(p, k)) due += +p.amt || 0;
+    if(p.type === "taksit"){
+      const r = remaining(p); debt += r * (+p.amt || 0);
+      if(r > 0){ any = true; instMonthly += +p.amt || 0; maxRem = Math.max(maxRem, isPaid(p, k) ? r : r - 1); }
+    } else if(p.type === "kart" && !isPaid(p, k)) debt += +p.amt || 0;
+  });
+  return {debt, due, any, instMonthly, end: any ? addMonths(new Date(), maxRem) : null};
+}
+/* Borç kapatma: en küçük bakiyeden başlar, biten borcun taksiti sıradakine eklenir (faizsiz varsayım) */
+function payoff(extra){
+  const k = curKey(), act = cfg.pays.filter(p => p.type === "taksit" && remaining(p) > 0);
+  const ds = act.map(p => ({name:p.name, amt:+p.amt || 0, bal:remaining(p) * (+p.amt || 0), start:remaining(p) * (+p.amt || 0)})).filter(d => d.amt > 0).sort((a, b) => a.bal - b.bal);
+  const offset = act.length && act.every(p => isPaid(p, k)) ? 1 : 0;
+  let m = 0;
+  while(ds.some(d => d.bal > .005) && m < 600){
+    let pool = extra;
+    ds.forEach(d => { if(d.bal > .005){ d.bal -= Math.min(d.bal, d.amt); } else if(extra > 0) pool += d.amt; });
+    for(const d of ds){ if(pool <= .005) break; if(d.bal > .005){ const pay = Math.min(d.bal, pool); d.bal -= pay; pool -= pay; } }
+    ds.forEach(d => { if(d.bal <= .005 && d.end === undefined) d.end = m; });
+    m++;
+  }
+  ds.forEach(d => { d.date = addMonths(new Date(), offset + (d.end || 0)); });
+  return {months:m, ds, end: ds.length ? addMonths(new Date(), offset + m - 1) : null};
+}
+
+/* Kural tabanlı değerlendirme: puan ve öneriler */
+function advise(){
+  const o = overview(), tips = [], k = o.k;
+  if(!o.expInc) return {score:null, tips:[{lvl:"", text:"Gelirini girince bütçeni değerlendirip öneri vermeye başlarım."}]};
+  let score = 100;
+  const fr = o.fixed / o.expInc;
+  if(fr > .5){ score -= 30; tips.push({lvl:"bad", text:`Gelirinin %${Math.round(fr * 100)} kadarı taksit ve sabit ödemelere gidiyor. Bu oran %35'in altına inene kadar yeni taksite girme.`}); }
+  else if(fr > .35){ score -= 15; tips.push({lvl:"warn", text:`Gelirinin %${Math.round(fr * 100)} kadarı taksit ve sabit ödemelere gidiyor. Sağlıklı sınır %35 civarı; yeni borçta temkinli ol.`}); }
+  else tips.push({lvl:"good", text:`Sabit ödemelerin gelirinin %${Math.round(fr * 100)} kadarı. Borç yükün yönetilebilir düzeyde.`});
+  if(o.waiting) tips.push({lvl:"", text:`Bu ayın maaşı henüz yatmadı. Şu an yalnızca devreden paranla hesaplıyorum; maaş yatınca ${tl(o.expInc)} eklenecek.`});
+  else if(o.budget <= 0){ score -= 30; tips.push({lvl:"bad", text:`Sabit ödemeler ve birikim payı gelirini ${tl(-o.budget)} aşıyor. Birikim yüzdesini düşür ya da bir sabit gideri azalt.`}); }
+  else if(o.s.exp > o.budget){ score -= 25; tips.push({lvl:"bad", text:`Bu ayın harcama bütçesini ${tl(o.s.exp - o.budget)} aştın. Ay sonuna kadar yalnızca zorunlu harcama yap.`}); }
+  else if(o.d >= 3){
+    const proj = o.s.exp / (o.d / o.mdays);
+    if(proj > o.budget * 1.1){ score -= 12; tips.push({lvl:"warn", text:`Bu hızla ay sonunda ${tl(proj - o.budget)} açık verirsin. Günlük harcamanı ${tl(o.daily)} ile sınırla.`}); }
+    else tips.push({lvl:"good", text:`Harcama hızın bütçenle uyumlu. Günde ${tl(o.daily)} harcayarak ayı dengede kapatırsın.`});
+  }
+  const over = cfg.pays.filter(p => isDue(p, k) && !isPaid(p, k) && (+p.day || 1) < o.d);
+  if(over.length){ score -= 10; tips.push({lvl:"bad", text:`Günü geçmiş ${over.length} ödemen var (${over.map(p => p.name).join(", ")}). Gecikme faizi işlemeden öde.`}); }
+  const ct = catTotals(k);
+  const exceeded = cfg.cats.filter(c => +c.limit && (ct.by[c.id] || 0) >= c.limit);
+  if(exceeded.length){ score -= Math.min(15, exceeded.length * 5); tips.push({lvl:"warn", text:`Limiti aşan kategoriler: ${exceeded.map(c => c.name).join(", ")}. Ay sonuna kadar bu kalemlerde dur.`}); }
+  if(o.target > 0){
+    if(o.s.sav >= o.target) tips.push({lvl:"good", text:`Bu ayın birikim payını (${tl(o.target)}) tamamladın.`});
+    else if(o.d > o.mdays * .6){ score -= 8; tips.push({lvl:"warn", text:`Bu ayın birikim payından ${tl(o.target - o.s.sav)} eksik. Ay bitmeden kenara koy.`}); }
+    else tips.push({lvl:"", text:`Bu ay kenara koyman gereken ${tl(o.target - o.s.sav)} bekliyor. Maaş gelince ilk iş bunu ayır.`});
+  }
+  const prev = sums(prevOf(k)).exp, need = o.fixed + (prev || o.s.exp), sv = savingsValue().total;
+  if(need > 0){
+    const m = sv / need;
+    if(m < 1){ score -= 10; tips.push({lvl:"warn", text:`Birikimin bir aylık giderini karşılamıyor. İlk hedef 3 aylık gider kadar acil durum fonu: ${tl(need * 3)}.`}); }
+    else if(m < 3) tips.push({lvl:"", text:`Birikimin ${fmtN(m, 1)} aylık giderini karşılıyor. 3 aya ulaşmak için ${tl(need * 3 - sv)} daha gerekiyor.`});
+    else tips.push({lvl:"good", text:`Birikimin ${fmtN(m, 1)} aylık giderini karşılıyor. Acil durum fonun hazır.`});
+  }
+  if(cfg.pays.some(p => p.type === "kart" && +p.min && +p.amt > +p.min)) tips.push({lvl:"", text:"Kredi kartında asgari tutarı değil ekstrenin tamamını öde; kalan borca faiz işler."});
+  const di = debtInfo();
+  if(di.any) tips.push({lvl:"", text:`Taksitlerin ${monthName(di.end)} ayında bitiyor. O zaman ayda ${tl(di.instMonthly)} boşa çıkacak; bunu birikime yönlendir.`});
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  return {score, label: score >= 80 ? "Dengeli" : score >= 60 ? "Dikkat" : "Riskli", cls: score >= 80 ? "good" : score >= 60 ? "warn" : "bad", tips};
+}
+/* Geçen ayın karnesi */
+function karne(){
+  const k = prevOf(curKey()), pk = prevOf(k);
+  if(!month(k).items.length) return null;
+  ensureMonth(pk);
+  const a = catTotals(k), b = catTotals(pk), sv = sums(k).sav, o = overview();
+  const checks = [
+    {ok: a.total <= o.planBudget, w:2, text:`Harcama ${tl(a.total)}, bütçe ${tl(Math.max(0, o.planBudget))}`},
+    {ok: o.planTarget > 0 && sv >= o.planTarget, w:2, text:`Birikime eklenen ${tl(sv)}, hedef ${tl(o.planTarget)}`},
+    {ok: b.total ? a.total <= b.total : true, w:1, text: b.total ? `Bir önceki aya göre harcama ${tl(Math.abs(a.total - b.total))} ${a.total <= b.total ? "azaldı" : "arttı"}` : "Karşılaştıracak daha eski ay yok"}
+  ];
+  const pts = checks.reduce((s, c) => s + (c.ok ? c.w : 0), 0);
+  const top = Object.keys(a.by).sort((x, y) => a.by[y] - a.by[x])[0];
+  return {k, grade:["E","E","D","C","B","A"][pts], cls: pts >= 4 ? "good" : pts >= 3 ? "warn" : "bad", checks, top: top ? `En çok harcama: ${catName(top)} (${tl(a.by[top])})` : ""};
+}
+
+/* ---------- Grafikler ---------- */
+function ringSvg(pct, label){
+  const R = 26, C = 2 * Math.PI * R, p = Math.max(0, Math.min(1, pct));
+  return `<svg class="ring" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Bütçenin yüzde ${Math.round(pct * 100)} kadarı harcandı">
+    <circle cx="32" cy="32" r="${R}" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="7"/>
+    <circle cx="32" cy="32" r="${R}" fill="none" stroke="${pct > 1 ? "#ff8f80" : "#f2b632"}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${p * C} ${C}" transform="rotate(-90 32 32)"/>
+    <text x="32" y="36" text-anchor="middle" style="fill:#fff;font-size:13px">${esc(label)}</text></svg>`;
+}
+function donutSvg(parts, total){
+  const R = 58, C = 2 * Math.PI * R, gap = parts.length > 1 ? 2.5 : 0; let off = 0;
+  const segs = parts.map(p => {
+    const len = p.val / total * C, vis = Math.max(.5, len - gap);
+    const s = `<circle cx="80" cy="80" r="${R}" fill="none" stroke="var(--s${p.col})" stroke-width="${selCat === p.id ? 24 : 18}" stroke-dasharray="${vis} ${C - vis}" stroke-dashoffset="${-off}" data-act="seg" data-id="${p.id}" style="cursor:pointer"><title>${esc(p.name)}: ${tl(p.val)}</title></circle>`;
+    off += len; return s;
+  }).join("");
+  const sel = parts.find(p => p.id === selCat);
+  return `<svg viewBox="0 0 160 160" width="190" height="190" role="img" aria-label="Kategorilere göre harcama dağılımı">
+    <g transform="rotate(-90 80 80)">${segs}</g>
+    <text x="80" y="72" text-anchor="middle" style="font-size:11px">${esc(sel ? sel.name : "Toplam")}</text>
+    <text x="80" y="92" text-anchor="middle" style="font-family:var(--display);font-weight:800;font-size:17px;fill:var(--ink)">${tl0(sel ? sel.val : total)}</text>
+    ${sel ? `<text x="80" y="107" text-anchor="middle">%${Math.round(sel.val / total * 100)}</text>` : ""}</svg>`;
+}
+function barsSvg(){
+  const cur = curKey(), keys = []; let k = cur;
+  for(let i = 0; i < 6; i++){ keys.unshift(k); ensureMonth(k); k = prevOf(k); }
+  const data = keys.map(x => ({k:x, exp:catTotals(x).total, sav:sums(x).sav}));
+  const budget = Math.max(0, overview().planBudget);
+  const max = Math.max(1, budget, ...data.map(d => Math.max(d.exp, d.sav)));
+  const W = 320, H = 150, L = 6, B = 22, T = 14, ph = H - B - T, gw = (W - L * 2) / 6, y = v => T + ph - v / max * ph;
+  let g = `<clipPath id="plot"><rect x="0" y="0" width="${W}" height="${T + ph}"/></clipPath>`;
+  [0.5, 1].forEach(f => { g += `<line x1="${L}" x2="${W - L}" y1="${y(max * f)}" y2="${y(max * f)}" stroke="var(--grid)" stroke-width="1"/>`; });
+  g += `<g clip-path="url(#plot)">`;
+  data.forEach((d, i) => {
+    const x = L + i * gw + gw / 2;
+    if(selBar === d.k) g += `<rect x="${L + i * gw + 2}" y="${T}" width="${gw - 4}" height="${ph + 4}" rx="6" fill="var(--field)"/>`;
+    if(d.exp > 0) g += `<rect x="${x - 13}" y="${y(d.exp)}" width="12" height="${ph + 8}" rx="4" fill="var(--s1)"/>`;
+    if(d.sav > 0) g += `<rect x="${x + 1}" y="${y(d.sav)}" width="12" height="${ph + 8}" rx="4" fill="var(--s3)"/>`;
+  });
+  g += `</g><line x1="${L}" x2="${W - L}" y1="${T + ph}" y2="${T + ph}" stroke="var(--muted)" stroke-width="1"/>`;
+  if(budget > 0) g += `<line x1="${L}" x2="${W - L}" y1="${y(budget)}" y2="${y(budget)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/><text x="${W - L}" y="${y(budget) - 4}" text-anchor="end">Harcama bütçen ${tl0(budget)}</text>`;
+  data.forEach((d, i) => {
+    g += `<text x="${L + i * gw + gw / 2}" y="${H - 6}" text-anchor="middle" ${d.k === cur ? 'style="fill:var(--ink);font-weight:700"' : ""}>${esc(keyDate(d.k).toLocaleDateString("tr-TR", {month:"short"}))}</text>
+      <rect x="${L + i * gw}" y="0" width="${gw}" height="${H}" fill="transparent" data-act="bar" data-id="${d.k}" style="cursor:pointer"><title>${esc(monthName(keyDate(d.k)))}: harcama ${tl(d.exp)}, birikim ${tl(d.sav)}</title></rect>`;
+  });
+  const s = data.find(d => d.k === selBar) || data[5];
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Son altı ayın harcama ve birikim tutarları">${g}</svg>
+    <div class="legend"><span><i class="dot sm" style="--c:var(--s1)"></i>Harcama</span><span><i class="dot sm" style="--c:var(--s3)"></i>Birikime eklenen</span></div>
+    <div class="small"><b>${esc(monthName(keyDate(s.k)))}:</b> harcama ${tl(s.exp)}, birikim ${tl(s.sav)}. <span class="muted">Başka ay için sütuna dokun.</span></div>`;
+}
+function sparkSvg(vals){
+  const W = 140, H = 40, min = Math.min(...vals), max = Math.max(...vals), span = max - min || 1;
+  const pts = vals.map((v, i) => [4 + i * (W - 12) / (vals.length - 1), 6 + (H - 12) * (1 - (v - min) / span)]);
+  const last = pts[pts.length - 1];
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Net varlığın aylara göre seyri">
+    <polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></svg>`;
+}
+
+/* ---------- Ekranlar ---------- */
+function lineItem(it, k){
+  const t = new Date(it.ts), time = pad(t.getHours()) + ":" + pad(t.getMinutes());
+  let name, sub = time, col = 0, ini;
+  if(it.kind === "sav"){
+    const g = it.goal ? cfg.goals.find(x => x.id === it.goal) : null;
+    name = g ? "Hedef: " + g.name : "Birikim: " + ASSETS[it.asset].name; ini = "₺"; col = 3;
+  } else { name = catName(it.cat); col = catCol(it.cat); ini = name.charAt(0).toLocaleUpperCase("tr-TR"); if(it.note) sub += " · " + it.note; }
+  return `<div class="item"><i class="dot" style="--c:var(--s${col});font-style:normal">${esc(ini)}</i><div class="what"><b>${esc(name)}</b><span class="small muted">${esc(sub)}</span></div>
+    <div class="side"><span class="num">${it.kind === "sav" ? "" : "-"}${tl(it.amt)}</span><button class="x" data-act="delItem" data-id="${it.id}" data-k="${k}" aria-label="Kaydı sil">Sil</button></div></div>`;
+}
+function viewOzet(){
+  const o = overview(), k = o.k, a = advise(), di = debtInfo(), sv = savingsValue().total, net = sv - di.debt, kr = karne();
+  const soon = cfg.pays.filter(p => isDue(p, k) && !isPaid(p, k) && (+p.day || 1) - o.d <= 7).sort((x, y) => (+x.day || 1) - (+y.day || 1));
+  const used = o.budget > 0 ? o.s.exp / o.budget : (o.s.exp > 0 ? 1.01 : 0);
+  let h = "";
+  if(!cfg.income) h += `<div class="notice"><b>Önce aylık gelirini yaz</b><span class="small muted">Harcayabileceğin tutar gelirine, taksitlerine ve birikim payına göre hesaplanır.</span><button class="btn primary" data-act="income">Geliri gir</button></div>`;
+  if(o.waiting) h += `<div class="notice"><b>Bu ayın maaşı henüz yatmadı</b><span class="small muted">Maaş sayılmıyor; hesap yalnızca devreden paranla (${tl(o.carry)}) yapılıyor. Yatınca ${tl(o.expInc)} eklenecek.</span>
+    <div class="acts"><button class="btn primary" data-act="gotSalary">Maaş yattı</button><button class="btn" data-act="income">Devreden parayı yaz</button></div></div>`;
+  h += `<section class="hero ${o.left < 0 ? "neg" : ""}"><div class="top"><div><div class="lbl">Bu ay harcayabileceğin</div><div class="big">${tl(o.left)}</div></div>${ringSvg(used, "%" + Math.round(used * 100))}</div>
+    <div class="chips"><div class="chip"><span>Bugün kalan</span><b>${tl0(Math.max(0, o.todayLeft))}</b></div><div class="chip"><span>Günlük pay</span><b>${tl0(o.daily)}</b></div><div class="chip"><span>Maaşa</span><b>${o.payIn} gün</b></div></div></section>`;
+  const hk = Object.keys(cfg.hist).sort().slice(-12), hv = hk.map(x => cfg.hist[x].s - cfg.hist[x].d);
+  h += `<div class="tiles"><div class="tile wide"><div class="row"><div><span>Net varlık (birikim eksi borç)</span><br><b>${tl0(net)}</b></div>${hv.length >= 2 ? sparkSvg(hv) : ""}</div>
+      <span>${hv.length >= 2 ? `${hk.length} ayda ${hv[hv.length - 1] - hv[0] >= 0 ? "+" : ""}${tl0(hv[hv.length - 1] - hv[0])}` : "Aylar geçtikçe burada gidişatın çizilir."}</span></div>
+    <div class="tile"><span>Toplam birikim</span><b>${tl0(sv)}</b></div><div class="tile"><span>Toplam kalan borç</span><b>${tl0(di.debt)}</b></div></div>`;
+  h += `<section class="card"><div class="row"><h2>Finans danışmanın</h2>${a.score === null ? "" : `<span class="pill ${a.cls}">${a.label} · ${a.score}/100</span>`}</div>`;
+  if(a.score !== null) h += `<div class="bar ${a.cls}"><i style="width:${a.score}%"></i></div>`;
+  h += `<ul class="tips">${a.tips.map(t => `<li class="${t.lvl}"><span>${esc(t.text)}</span></li>`).join("")}</ul>`;
+  if(a.score !== null) h += `<span class="small muted">Öneriler genel bütçe bilgisidir, yatırım tavsiyesi değildir.</span>`;
+  h += `</section>`;
+  h += `<section class="card"><h2>Yaklaşan ödemeler</h2>`;
+  if(!soon.length) h += `<span class="small muted">Önümüzdeki 7 gün içinde ödeme görünmüyor.</span>`;
+  else h += `<div class="list">` + soon.map(p => {
+    const diff = (+p.day || 1) - o.d;
+    const when = diff < 0 ? `<span class="pill bad">${-diff} gün gecikti</span>` : diff === 0 ? `<span class="pill warn">Bugün</span>` : `<span class="pill">${diff} gün sonra</span>`;
+    return `<div class="item"><div class="what"><b>${esc(p.name)}</b><span>${when}</span></div><div class="side"><span class="num">${tl(+p.amt)}</span><button class="btn sm" data-act="pay" data-id="${p.id}">Ödendi</button></div></div>`;
+  }).join("") + `</div>`;
+  h += `</section>`;
+  const recent = month(k).items.slice().sort((x, y) => y.ts - x.ts).slice(0, 5);
+  h += `<section class="card"><div class="row"><h2>Son işlemler</h2><a class="btn sm" href="#analiz" style="text-decoration:none;display:inline-flex;align-items:center">Tümü</a></div>`;
+  h += recent.length ? `<div class="list">${recent.map(it => lineItem(it, k)).join("")}</div>` : `<span class="small muted">Bu ay henüz işlem yok. Alttaki artı düğmesiyle ilk harcamanı gir.</span>`;
+  h += `</section>`;
+  h += `<section class="card"><h2>${kr ? esc(monthName(keyDate(kr.k), {month:"long"})) + " karnesi" : "Ay sonu karnesi"}</h2>`;
+  if(!kr) h += `<span class="small muted">İlk karnen bu ay bitince hazır olur: bütçeye uydun mu, birikim payını ayırdın mı, geçen aya göre nasılsın.</span>`;
+  else h += `<div class="row" style="justify-content:flex-start;align-items:flex-start"><div class="grade" style="color:var(--${kr.cls})">${kr.grade}</div><div class="stack">${kr.checks.map(c => `<div class="check ${c.ok ? "ok" : "no"}"><i>${c.ok ? "✓" : "✗"}</i><span>${esc(c.text)}</span></div>`).join("")}</div></div>${kr.top ? `<span class="small muted">${esc(kr.top)}</span>` : ""}`;
+  return h + `</section>`;
+}
+
+function viewKasa(){
+  const k = curKey(), todayStr = new Date().toDateString();
+  const today = month(k).items.filter(it => it.kind !== "sav" && new Date(it.ts).toDateString() === todayStr);
+  const total = today.reduce((a, it) => a + it.amt, 0);
+  const opts = [1,2,3,4,5,6,9,12,18,24,36].map(n => `<option value="${n}">${n === 1 ? "Peşin" : n + " taksit"}</option>`).join("");
+  let h = `<section class="card"><div class="amount"><span class="small muted">Tutarı yaz, kategoriye dokun</span><div class="big" id="entry">${esc(entry || "0")} ₺</div></div>
+    <div class="cats">` + cfg.cats.map(c => `<button class="cat" data-cat="${c.id}"><i class="dot" style="--c:var(--s${c.col || 0});font-style:normal">${esc(c.name.charAt(0).toLocaleUpperCase("tr-TR"))}</i><span>${esc(c.name)}</span></button>`).join("") + `</div>
+    <div class="keys">` + ["1","2","3","4","5","6","7","8","9",",","0","sil"].map(x =>
+    `<button class="key" data-key="${x}" ${x === "sil" ? 'aria-label="Son rakamı sil"' : ""}>${x === "sil" ? "⌫" : x}</button>`).join("") + `</div>
+    <div class="pair"><label>Ödeme şekli<select id="inst">${opts}</select></label><label>Not (isteğe bağlı)<input id="note" maxlength="40" autocomplete="off"></label></div>
+    <span class="small muted">Taksitli seçersen tutar taksit sayısına bölünür ve Borçlar'a eklenir.</span></section>`;
+  h += `<section class="card"><div class="row"><h2>Bugün</h2><span class="num">${tl(total)}</span></div>`;
+  h += today.length ? `<div class="list">${today.slice().reverse().map(it => lineItem(it, k)).join("")}</div>` : `<span class="small muted">Bugün henüz harcama girmedin.</span>`;
+  return h + `</section><button class="btn sm ghost" data-act="cats">Kategorileri düzenle</button>`;
+}
+
+function viewBorclar(){
+  const k = curKey(), di = debtInfo(), inc = incomeTotal();
+  const typeName = {taksit:"Taksit", sabit:"Sabit", kart:"Kredi kartı"};
+  let h = `<div class="tiles"><div class="tile"><span>Toplam kalan borç</span><b>${tl0(di.debt)}</b></div><div class="tile"><span>Bu ay ödenecek</span><b>${tl0(di.due)}</b></div>
+    <div class="tile"><span>Taksitlerin bitişi</span><b>${di.any ? esc(monthName(di.end, {month:"short", year:"numeric"})) : "Yok"}</b></div>
+    <div class="tile"><span>Gelire oranı</span><b>${inc ? "%" + Math.round(di.due / inc * 100) : "Gelir yok"}</b></div></div>`;
+  h += `<section class="card"><div class="row"><h2>Taksitler ve ödemeler</h2><button class="btn sm primary" data-act="addPay">Ekle</button></div>`;
+  if(!cfg.pays.length) h += `<span class="small muted">Banka taksitlerini, kredi kartını, kira ve fatura gibi sabit ödemelerini buraya ekle. Her ay gelirinden kendiliğinden düşülür.</span>`;
+  else h += `<div class="list">` + cfg.pays.slice().sort((a, b) => (+a.day || 1) - (+b.day || 1)).map(p => {
+    const r = remaining(p), paid = isPaid(p, k), active = isDue(p, k);
+    let info = `Ayın ${+p.day || 1}. günü`;
+    if(p.type === "taksit") info += ` · ${r} taksit kaldı`;
+    if(p.type === "kart" && +p.min) info += ` · asgari ${tl(+p.min)}`;
+    const bar = p.type === "taksit" && +p.total ? `<div class="bar gold"><i style="width:${Math.round(p.paid.length / p.total * 100)}%"></i></div>` : "";
+    return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px"><div class="row"><div class="what"><b>${esc(p.name)}</b><span class="small muted">${typeName[p.type] || "Ödeme"} · ${esc(info)}</span></div><span class="num">${tl(+p.amt)}</span></div>${bar}
+      <div class="row" style="justify-content:flex-end">${active ? `<button class="btn sm ${paid ? "on" : ""}" data-act="pay" data-id="${p.id}" aria-pressed="${paid}">${paid ? "Bu ay ödendi ✓" : "Bu ay ödendi"}</button>` : `<span class="pill good">Bitti</span>`}
+      <button class="btn sm ghost" data-act="editPay" data-id="${p.id}">Düzenle</button></div></div>`;
+  }).join("") + `</div>`;
+  h += `</section>`;
+  h += viewTakvim();
+  const base = payoff(0), card = cfg.pays.filter(p => p.type === "kart" && !isPaid(p, k) && +p.amt > 0);
+  h += `<section class="card"><h2>Borç kapatma planı</h2>`;
+  if(!base.ds.length && !card.length) h += `<span class="small muted">Taksitli borcun olunca hangi sırayla kapatacağını ve ek ödemeyle ne kadar erken biteceğini burada görürsün.</span>`;
+  else {
+    if(card.length) h += `<div class="check no"><i>!</i><span>Önce kredi kartı ekstresinin tamamını öde (${tl(card.reduce((s, p) => s + +p.amt, 0))}). En pahalı borç odur.</span></div>`;
+    if(base.ds.length){
+      const plan = planExtra > 0 ? payoff(planExtra) : base;
+      h += `<span class="small muted">Sıra en küçük borçtan başlar; biten borcun taksiti sıradakine eklenir.</span><div class="list">` + plan.ds.map((d, i) =>
+        `<div class="item"><i class="dot" style="--c:var(--s${i < 8 ? i + 1 : 0});font-style:normal">${i + 1}</i><div class="what"><b>${esc(d.name)}</b><span class="small muted">Kalan ${tl(d.start)} · ${esc(monthName(d.date))} ayında biter</span></div></div>`).join("") + `</div>
+        <label>Her ay borca ek ne kadar ödeyebilirsin? (₺)<input id="extra" inputmode="decimal" value="${inp(planExtra)}" placeholder="Örn. 2.000"></label>`;
+      if(planExtra > 0){
+        const gain = base.months - plan.months;
+        h += `<div class="check ${gain > 0 ? "ok" : "no"}"><i>${gain > 0 ? "✓" : "–"}</i><span>${gain > 0 ? `Ayda ${tl(planExtra)} ek ödemeyle borçların ${gain} ay erken, ${monthName(plan.end)} ayında biter.` : "Bu tutar bitiş tarihini değiştirmiyor; biraz daha yüksek dene."}</span></div>`;
+      } else h += `<span class="small">Şu anki ödemelerle borçların <b>${esc(monthName(base.end))}</b> ayında biter.</span>`;
+      h += `<span class="small muted">Hesap faizsiz ve erken ödeme indirimi olmadan yapılır; bankan erken kapamada indirim uygulayabilir.</span>`;
+    }
+  }
+  return h + `</section><p class="small muted" style="margin:0">Kredi kartında her ay ekstre tutarını güncelle. Kartla yaptığın alışverişleri ayrıca harcama olarak girersen iki kez sayılır.</p>`;
+}
+
+/* Gelecek aylar: hangi ay hangi taksit ve sabit ödeme var */
+function schedule(){
+  const k = curKey(), now = new Date(), rows = [];
+  let last = 0;
+  cfg.pays.forEach(p => { if(p.type === "taksit" && remaining(p) > 0) last = Math.max(last, (isPaid(p, k) ? 1 : 0) + remaining(p) - 1); });
+  const hasFixed = cfg.pays.some(p => p.type === "sabit" && +p.amt > 0);
+  const n = Math.min(36, Math.max(last + 1, hasFixed ? 6 : 0));
+  for(let i = 0; i < n; i++){
+    const items = []; let total = 0, inst = 0;
+    cfg.pays.forEach(p => {
+      const amt = +p.amt || 0; if(!amt) return;
+      if(p.type === "taksit"){
+        const paidNow = isPaid(p, k), off = paidNow ? 1 : 0, r = remaining(p);
+        if(i === 0 && paidNow) items.push({name:p.name, amt, day:+p.day || 1, tag:`${p.paid.length}/${p.total} · ödendi`, inst:true});
+        else if(i >= off && i < off + r) items.push({name:p.name, amt, day:+p.day || 1, tag:`${p.paid.length + (i - off) + 1}/${p.total}${i - off === r - 1 ? " · son taksit" : ""}`, inst:true});
+        else return;
+        inst += amt;
+      } else if(p.type === "sabit") items.push({name:p.name, amt, day:+p.day || 1, tag:"Sabit"});
+      else return;
+      total += amt;
+    });
+    items.sort((a, b) => a.day - b.day);
+    rows.push({date:addMonths(now, i), items, total, inst});
+  }
+  return rows;
+}
+function viewTakvim(){
+  const rows = schedule();
+  let h = `<section class="card"><h2>Gelecek aylar</h2>`;
+  if(!rows.length) return h + `<span class="small muted">Taksit ya da sabit ödeme ekleyince önümüzdeki aylarda hangi ay ne ödeyeceğini burada görürsün.</span></section>`;
+  h += `<span class="small muted">Aya dokununca o ayın taksitleri açılır. Kredi kartı ekstresi önceden bilinmediği için dahil değil.</span>`;
+  rows.forEach((r, i) => {
+    const prev = i ? rows[i - 1].total : r.total, drop = prev - r.total;
+    h += `<details class="mon" ${i < 2 ? "open" : ""}><summary><span><b>${esc(monthName(r.date))}</b>${i === 0 ? ' <span class="pill">Bu ay</span>' : ""}${drop > 0 ? ` <span class="pill good">${tl0(drop)} azalıyor</span>` : ""}</span><span class="num">${tl0(r.total)}</span></summary><div class="list">` +
+      r.items.map(it => `<div class="item"><div class="what"><b>${esc(it.name)}</b><span class="small muted">Ayın ${it.day}. günü · ${esc(it.tag)}</span></div><span class="num">${tl(it.amt)}</span></div>`).join("") +
+      `</div></details>`;
+  });
+  return h + `</section>`;
+}
+
+function viewBirikim(){
+  const o = overview(), v = savingsValue(), k = o.k;
+  const deps = month(k).items.filter(it => it.kind === "sav");
+  const pct = o.target > 0 ? Math.min(100, o.s.sav / o.target * 100) : 0;
+  const at = cfg.sav.ratesAt, age = at ? Math.floor((Date.now() - at) / 864e5) : null;
+  const rateNote = age === null ? "Kurlar henüz girilmedi" : age === 0 ? "Kurlar bugün güncellendi" : `Kurlar ${age} gün önce güncellendi`;
+  let h = `<section class="hero"><div><div class="lbl">Toplam birikim</div><div class="big">${tl(v.total)}</div></div>
+    <div class="lbl">${v.missing ? "Kuru girilmeyen varlıklar toplama katılmadı" : rateNote}</div></section>`;
+  h += `<section class="card"><div class="row"><h2>Bu ayın birikim payı</h2><span class="num">${tl0(o.s.sav)} / ${tl0(o.target)}</span></div>
+    <div class="bar good"><i style="width:${pct}%"></i></div>
+    <label>Maaşın yüzde kaçını ayıracaksın?<input id="pct" inputmode="decimal" value="${inp(cfg.sav.pct) || "0"}"></label>
+    <span class="small muted">Bu pay, kenara koymasan da harcayabileceğin tutardan ayrılır.</span>
+    <button class="btn primary" data-act="addSav">Birikime para ekle</button></section>`;
+  h += `<section class="card"><div class="row"><h2>Hedeflerim</h2><button class="btn sm primary" data-act="addGoal">Hedef ekle</button></div>`;
+  if(!cfg.goals.length) h += `<span class="small muted">Araba, tatil, telefon gibi bir hedef koy; ne kadar biriktirdiğini ve bu hızla ne zaman ulaşacağını gör.</span>`;
+  else h += `<div class="list">` + cfg.goals.map(g => {
+    const rem = Math.max(0, g.target - g.saved), p = g.target ? Math.min(100, g.saved / g.target * 100) : 0;
+    const eta = rem <= 0 ? "Hedefe ulaştın" : +g.monthly > 0 ? `Ayda ${tl0(+g.monthly)} ile ${monthName(addMonths(new Date(), Math.ceil(rem / g.monthly)))} ayında` : "Aylık tutar girersen tarih hesaplanır";
+    return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px"><div class="row"><b>${esc(g.name)}</b><span class="num">${tl0(g.saved)} / ${tl0(g.target)}</span></div>
+      <div class="bar ${rem <= 0 ? "good" : "gold"}"><i style="width:${p}%"></i></div>
+      <div class="row"><span class="small muted">%${Math.round(p)} · ${esc(eta)}</span><span class="side"><button class="btn sm" data-act="fundGoal" data-id="${g.id}">Para ekle</button><button class="btn sm ghost" data-act="editGoal" data-id="${g.id}">Düzenle</button></span></div></div>`;
+  }).join("") + `</div>`;
+  h += `</section>`;
+  h += `<section class="card"><div class="row"><h2>Hesaplarım</h2><button class="btn sm ${age !== null && age >= 3 ? "primary" : ""}" data-act="rates">Kurları güncelle</button></div><div class="list">` + Object.keys(ASSETS).map((a, i) => {
+    const units = cfg.sav.hold[a] || 0, rate = a === "TRY" ? 1 : cfg.sav.rates[a] || 0;
+    const sub = a === "TRY" ? "Vadesiz, vadeli, nakit" : rate ? `Kur ${tl(rate)} · ${tl(units * rate)}` : "Kur girilmedi";
+    return `<div class="item"><i class="dot" style="--c:var(--s${[3,1,7,4][i]});font-style:normal">${ASSETS[a].unit}</i><div class="what"><b>${ASSETS[a].name}</b><span class="small muted">${sub}</span></div>
+      <div class="side"><span class="num">${fmtN(units, a === "XAU" ? 3 : 2)} ${ASSETS[a].unit}</span><button class="btn sm ghost" data-act="editHold" data-id="${a}">Düzenle</button></div></div>`;
+  }).join("") + `</div></section>`;
+  h += `<section class="card"><h2>Bu ay eklediklerin</h2>`;
+  h += deps.length ? `<div class="list">${deps.slice().reverse().map(it => lineItem(it, k)).join("")}</div>` : `<span class="small muted">Bu ay henüz birikim eklemedin.</span>`;
+  return h + `</section>`;
+}
+
+function viewAnaliz(){
+  const cur = curKey(); if(!repKey) repKey = cur;
+  const k = repKey, pk = prevOf(k);
+  ensureMonth(k); ensureMonth(pk);
+  const mName = monthName(keyDate(k));
+  let h = `<div class="row"><button class="btn sm" data-act="mPrev" aria-label="Önceki ay">‹ Önceki</button><h2>${esc(mName)}</h2><button class="btn sm" data-act="mNext" aria-label="Sonraki ay" ${k >= cur ? "disabled" : ""}>Sonraki ›</button></div>
+    <div class="seg"><button data-act="modeKat" aria-pressed="${repMode === "kat"}">Grafikler</button><button data-act="modeGun" aria-pressed="${repMode === "gun"}">Gün gün</button></div>`;
+  if(loading[k]) h += `<span class="small muted">Bu ayın kayıtları yükleniyor.</span>`;
+  const a = catTotals(k), b = catTotals(pk), sv = sums(k).sav;
+  if(repMode === "kat"){
+    const ids = cfg.cats.map(c => c.id);
+    Object.keys(a.by).concat(Object.keys(b.by)).forEach(id => { if(!ids.includes(id)) ids.push(id); });
+    const parts = ids.map(id => ({id, name:catName(id), val:a.by[id] || 0, col:catCol(id)})).filter(p => p.val > 0);
+    const diff = b.total ? Math.round((a.total - b.total) / b.total * 100) : null;
+    h += `<div class="tiles"><div class="tile"><span>Bu ay harcama</span><b>${tl0(a.total)}</b></div><div class="tile"><span>Önceki aya göre</span><b>${diff === null ? "Veri yok" : (diff > 0 ? "+" : "") + "%" + diff}</b></div></div>`;
+    h += `<section class="card"><div class="row"><h2>Para nereye gitti?</h2><button class="btn sm" data-act="cats">Limitler</button></div>`;
+    if(parts.length) h += `<div class="donutwrap">${donutSvg(parts, a.total)}</div>`;
+    else h += `<span class="small muted">Bu ayda harcama kaydı yok.</span>`;
+    h += `<div class="list">` + ids.map(id => {
+      const c = catOf(id), amt = a.by[id] || 0, last = b.by[id] || 0, lim = c ? +c.limit || 0 : 0;
+      if(!amt && !last && !lim) return "";
+      const ratio = lim ? amt / lim : 0, st = lim ? (ratio >= 1 ? "bad" : ratio >= .8 ? "warn" : "") : "";
+      const pill = st === "bad" ? ` <span class="pill bad">Limit aşıldı</span>` : st === "warn" ? ` <span class="pill warn">Limite yakın</span>` : "";
+      return `<div class="item" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div class="row"><span style="display:flex;align-items:center;gap:8px;min-width:0"><i class="dot sm" style="--c:var(--s${catCol(id)})"></i><b>${esc(catName(id))}</b>${pill}</span><span class="num">${tl0(amt)}${lim ? " / " + tl0(lim) : ""}</span></div>
+        ${lim ? `<div class="bar ${st}"><i style="width:${Math.min(100, ratio * 100)}%"></i></div>` : ""}
+        <span class="small muted">${a.total && amt ? "%" + Math.round(amt / a.total * 100) + " · " : ""}Önceki ay ${tl0(last)}</span></div>`;
+    }).join("") + `</div><span class="small muted">Taksitli alışverişlerin o aya düşen taksiti kategorisine eklenir. Bu ay birikime ayrılan: ${tl(sv)}.</span></section>`;
+    h += `<section class="card"><h2>Son 6 ay</h2>${barsSvg()}</section>`;
+  } else {
+    h += `<label>Belirli bir güne git<input type="date" id="repDate" max="${ymd(new Date())}" value="${esc(repDay)}"></label>`;
+    let items = month(k).items.slice().sort((x, y) => y.ts - x.ts);
+    if(repDay) items = items.filter(it => ymd(new Date(it.ts)) === repDay);
+    const groups = {};
+    items.forEach(it => { const d = ymd(new Date(it.ts)); (groups[d] || (groups[d] = [])).push(it); });
+    const days = Object.keys(groups).sort().reverse();
+    const total = items.filter(it => it.kind !== "sav").reduce((s, it) => s + it.amt, 0);
+    h += `<section class="card"><div class="row"><h2>${esc(repDay ? new Date(repDay + "T12:00").toLocaleDateString("tr-TR", {day:"numeric", month:"long", weekday:"long"}) : "Hesap dökümü")}</h2><span class="num">${tl(total)}</span></div>`;
+    if(repDay) h += `<button class="btn sm" data-act="clearDay">Tüm ayı göster</button>`;
+    if(!days.length) h += `<span class="small muted">${repDay ? "Bu günde kayıt yok." : "Bu ayda kayıt yok."}</span>`;
+    days.forEach(d => {
+      const list = groups[d], dt = list.filter(it => it.kind !== "sav").reduce((s, it) => s + it.amt, 0);
+      h += `<div class="dayhead"><span>${esc(new Date(d + "T12:00").toLocaleDateString("tr-TR", {day:"numeric", month:"long", weekday:"long"}))}</span><span>${tl(dt)}</span></div><div class="list">${list.map(it => lineItem(it, k)).join("")}</div>`;
+    });
+    h += `</section>`;
+  }
+  return h;
+}
+
+function render(){
+  $("#ay").textContent = monthName(new Date());
+  document.querySelectorAll("nav a").forEach(a => a.dataset.tab === tab ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  const note = $("#note") ? $("#note").value : "", inst = $("#inst") ? $("#inst").value : "1";
+  $("#main").innerHTML = ({ozet:viewOzet, kasa:viewKasa, borclar:viewBorclar, birikim:viewBirikim, analiz:viewAnaliz}[tab] || viewOzet)();
+  if($("#note")){ $("#note").value = note; $("#inst").value = inst; }
+}
+function route(){
+  let t = location.hash.slice(1); if(t === "rapor") t = "analiz";
+  tab = ["ozet","kasa","borclar","birikim","analiz"].includes(t) ? t : "ozet";
+  render(); window.scrollTo(0, 0);
+}
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3200); }
+
+/* ---------- Form pencereleri ---------- */
+let onSubmit = null;
+function openSheet(title, html, submit){
+  $("#sheetTitle").textContent = title; $("#sheetForm").innerHTML = html; onSubmit = submit || null; $("#veil").classList.add("open");
+  const f = $("#sheetForm").querySelector("input,select"); if(f) f.focus();
+}
+function closeSheet(){ $("#veil").classList.remove("open"); onSubmit = null; }
+const val = id => { const e = document.getElementById(id); return e ? e.value : ""; };
+
+function sheetSettings(){
+  openSheet("Ayarlar", `<div class="stack">
+    <button type="button" class="btn" data-act="income">Gelir ve maaş günü</button>
+    <button type="button" class="btn" data-act="cats">Kategoriler ve limitler</button>
+    <button type="button" class="btn" data-act="rates">Döviz ve altın kurları</button></div>
+    <div class="small muted">Yedek. Veriler yalnızca bu telefonda durur; ara sıra yedek alıp Dosyalar'a ya da kendine e-postayla kaydet.</div>
+    <div class="stack"><button type="button" class="btn" data-act="backup">Yedek al</button>
+    <label class="btn" style="display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:16px;cursor:pointer">Yedekten geri yükle<input type="file" id="fRestore" accept=".json,application/json" hidden></label></div>
+    <div class="small muted">Sıfırlama. Yeni ay başladığında harcamalar kendiliğinden sıfırdan başlar; eski aylar Analiz'de durur.</div>
+    <div class="stack"><button type="button" class="btn danger" data-act="askResetMonth">Bu ayın harcamalarını sil</button>
+    <button type="button" class="btn danger" data-act="askResetAll">Tüm verileri sıfırla</button></div>`);
+}
+function sheetConfirm(title, text, act){
+  openSheet(title, `<span>${esc(text)}</span><div class="acts"><button type="button" class="btn" data-act="close">Vazgeç</button><button type="button" class="btn primary" data-act="${act}">Evet, sil</button></div>`);
+}
+function sheetIncome(){
+  const row = e => `<div class="erow" data-row><input aria-label="Ek gelir adı" data-f="name" placeholder="Örn. kira geliri" value="${esc(e.name || "")}"><input aria-label="Tutar" data-f="amt" inputmode="decimal" placeholder="Tutar" value="${inp(e.amt)}"><button type="button" class="x" data-act="rmRow" aria-label="Satırı sil">✕</button></div>`;
+  openSheet("Gelir", `<div class="pair"><label>Aylık maaş (₺)<input id="fIncome" inputmode="decimal" value="${inp(cfg.income)}"></label>
+    <label>Maaş günü<input id="fPayday" inputmode="numeric" value="${cfg.payday || 1}"></label></div>
+    <label class="chk"><input type="checkbox" id="fGot" ${month(curKey()).got ? "checked" : ""}><span>Bu ayın maaşı hesabıma yattı</span></label>
+    <label>Geçen aydan devreden, şu an elinde olan para (₺)<input id="fCarry" inputmode="decimal" value="${inp(month(curKey()).carry)}"></label>
+    <span class="small muted">Maaş yatmadıysa kutuyu boş bırak; o zamana kadar yalnızca devreden para harcanabilir sayılır. Her yeni ayda maaş yatınca Özet'teki "Maaş yattı" düğmesine bas.</span>
+    <div class="small muted">Ek gelirler</div><div id="rows" class="stack">${cfg.extras.map(row).join("")}</div>
+    <button type="button" class="btn sm" data-act="addRow">Ek gelir ekle</button>
+    <div class="acts"><button class="btn primary">Kaydet</button></div>`, () => {
+    cfg.income = parseNum(val("fIncome"));
+    cfg.payday = Math.min(31, Math.max(1, parseInt(val("fPayday"), 10) || 1));
+    const mm = month(curKey()); mm.got = $("#fGot").checked; mm.carry = parseNum(val("fCarry")); saveMonth(curKey());
+    cfg.extras = [...document.querySelectorAll("#rows [data-row]")].map(r => ({id:uid(), name:r.querySelector('[data-f="name"]').value.trim() || "Ek gelir", amt:parseNum(r.querySelector('[data-f="amt"]').value)})).filter(e => e.amt > 0);
+    saveCfg(); return true;
+  });
+  $("#sheetForm").dataset.rowTpl = row({});
+}
+function sheetCats(){
+  const row = c => `<div class="erow" data-row data-id="${c.id || ""}"><input aria-label="Kategori adı" data-f="name" placeholder="Kategori adı" maxlength="24" value="${esc(c.name || "")}"><input aria-label="Aylık limit" data-f="limit" inputmode="decimal" placeholder="Limit ₺" value="${inp(c.limit)}"><button type="button" class="x" data-act="rmRow" aria-label="Kategoriyi sil">✕</button></div>`;
+  const inc = incomeTotal();
+  openSheet("Kategoriler ve limitler", `<span class="small muted">Limit boşsa o kategoride uyarı verilmez.${inc ? ` Gelirine göre kaba ölçü: zorunlu giderlere en çok ${tl0(inc * .5)}, isteklere ${tl0(inc * .3)}, birikime ${tl0(inc * .2)}.` : ""}</span>
+    <div id="rows" class="stack">${cfg.cats.map(row).join("")}</div>
+    <button type="button" class="btn sm" data-act="addRow">Kategori ekle</button>
+    <div class="acts"><button class="btn primary">Kaydet</button></div>`, () => {
+    const used = [];
+    const list = [...document.querySelectorAll("#rows [data-row]")].map(r => {
+      const old = catOf(r.dataset.id);
+      return {id:r.dataset.id || "c" + uid(), name:r.querySelector('[data-f="name"]').value.trim(), limit:parseNum(r.querySelector('[data-f="limit"]').value), col: old ? old.col : -1};
+    }).filter(c => c.name);
+    if(!list.length){ toast("En az bir kategori kalmalı."); return false; }
+    list.forEach(c => { if(c.col > 0) used.push(c.col); });
+    list.forEach(c => { if(c.col < 0){ let n = 0; for(let i = 1; i <= 8; i++) if(!used.includes(i)){ n = i; break; } c.col = n; if(n) used.push(n); } });
+    cfg.cats = list; saveCfg(); return true;
+  });
+  $("#sheetForm").dataset.rowTpl = row({});
+}
+function sheetPay(id){
+  const p = cfg.pays.find(x => x.id === id) || {type:"taksit", paid:[]};
+  const rem = p.id && p.type === "taksit" ? remaining(p) : "";
+  openSheet(p.id ? "Ödemeyi düzenle" : "Ödeme ekle", `<label>Tür<select id="fType">
+      <option value="taksit">Taksit (banka kredisi, taksitli alışveriş, borç)</option>
+      <option value="sabit">Sabit ödeme (kira, fatura, abonelik)</option>
+      <option value="kart">Kredi kartı ekstresi</option></select></label>
+    <label>Ad<input id="fName" maxlength="40" placeholder="Örn. ihtiyaç kredisi" value="${esc(p.name || "")}"></label>
+    <div class="pair"><label><span id="lAmt">Aylık tutar (₺)</span><input id="fAmt" inputmode="decimal" value="${inp(+p.amt)}"></label>
+    <label>Ödeme günü<input id="fDay" inputmode="numeric" value="${p.day || ""}" placeholder="1-31"></label></div>
+    <label id="wRem">Kalan taksit sayısı<input id="fRem" inputmode="numeric" value="${rem}"></label>
+    <label id="wMin">Asgari ödeme tutarı (₺)<input id="fMin" inputmode="decimal" value="${inp(+p.min)}"></label>
+    <div class="acts">${p.id ? `<button type="button" class="btn danger" data-act="delPay" data-id="${p.id}">Sil</button>` : ""}<button class="btn primary">Kaydet</button></div>`, () => {
+    const name = val("fName").trim(), amt = parseNum(val("fAmt")), type = val("fType");
+    if(!name || !amt){ toast("Ad ve tutar yazmalısın."); return false; }
+    const n = {id:p.id || uid(), type, name, amt, day:Math.min(31, Math.max(1, parseInt(val("fDay"), 10) || 1)), paid:(p.paid || []).slice(-36)};
+    if(p.cat) n.cat = p.cat;
+    if(p.ts) n.ts = p.ts;
+    if(type === "taksit"){
+      const r = parseInt(val("fRem"), 10);
+      if(!(r >= 0)){ toast("Kalan taksit sayısını yaz."); return false; }
+      n.total = n.paid.length + r;
+    }
+    if(type === "kart") n.min = parseNum(val("fMin"));
+    const i = cfg.pays.findIndex(x => x.id === n.id);
+    if(i >= 0) cfg.pays[i] = n; else cfg.pays.push(n);
+    saveCfg(); return true;
+  });
+  $("#fType").value = p.type || "taksit";
+  const sync = () => { const t = $("#fType").value; $("#wRem").hidden = t !== "taksit"; $("#wMin").hidden = t !== "kart"; $("#lAmt").textContent = t === "kart" ? "Bu ayki ekstre (₺)" : "Aylık tutar (₺)"; };
+  $("#fType").addEventListener("change", sync); sync();
+}
+function sheetSav(){
+  openSheet("Birikime para ekle", `<label>Tutar (₺)<input id="fAmt" inputmode="decimal"></label>
+    <label>Nereye koyuyorsun?<select id="fAsset">${Object.keys(ASSETS).map(a => `<option value="${a}">${ASSETS[a].name}</option>`).join("")}</select></label>
+    <label id="wRate">Alış kuru (₺)<input id="fRate" inputmode="decimal"></label>
+    <span class="small muted" id="calc"></span>
+    <div class="acts"><button class="btn primary">Ekle</button></div>`, () => {
+    const amt = parseNum(val("fAmt")), a = val("fAsset"), rate = a === "TRY" ? 1 : parseNum(val("fRate"));
+    if(!amt){ toast("Tutar yazmalısın."); return false; }
+    if(!rate){ toast("Kuru yazmalısın."); return false; }
+    const units = amt / rate;
+    cfg.sav.hold[a] = (cfg.sav.hold[a] || 0) + units;
+    if(a !== "TRY"){ cfg.sav.rates[a] = rate; cfg.sav.ratesAt = Date.now(); }
+    month(curKey()).items.push({id:uid(), ts:Date.now(), kind:"sav", amt, asset:a, units});
+    saveCfg(); saveMonth(curKey()); toast(tl(amt) + " birikime eklendi."); return true;
+  });
+  const sync = () => {
+    const a = $("#fAsset").value; $("#wRate").hidden = a === "TRY";
+    if(a !== "TRY" && !$("#fRate").value) $("#fRate").value = inp(cfg.sav.rates[a]);
+    const amt = parseNum($("#fAmt").value), r = parseNum($("#fRate").value);
+    $("#calc").textContent = a !== "TRY" && amt && r ? "Karşılığı: " + fmtN(amt / r, 3) + " " + ASSETS[a].unit : "";
+  };
+  $("#fAsset").addEventListener("change", () => { $("#fRate").value = ""; sync(); });
+  $("#fAmt").addEventListener("input", sync); $("#fRate").addEventListener("input", sync); sync();
+}
+function sheetHold(a){
+  const u = cfg.sav.hold[a] || 0;
+  openSheet(ASSETS[a].name, `<label>Elindeki miktar (${ASSETS[a].unit})<input id="fUnits" inputmode="decimal" value="${u ? String(Math.round(u * 1000) / 1000).replace(".", ",") : ""}"></label>
+    ${a === "TRY" ? "" : `<label>Güncel kur (₺)<input id="fRate" inputmode="decimal" value="${inp(cfg.sav.rates[a])}"></label>`}
+    <span class="small muted">Buradaki değişiklik bu ayın bütçesini etkilemez; yalnızca hesaptaki miktarı düzeltir.</span>
+    <div class="acts"><button class="btn primary">Kaydet</button></div>`, () => {
+    const raw = val("fUnits").trim().replace(/\./g, "").replace(",", ".");
+    cfg.sav.hold[a] = Math.max(0, parseFloat(raw) || 0);
+    if(a !== "TRY"){ cfg.sav.rates[a] = parseNum(val("fRate")); cfg.sav.ratesAt = Date.now(); }
+    saveCfg(); return true;
+  });
+}
+function sheetRates(){
+  const r = cfg.sav.rates;
+  openSheet("Kurları güncelle", `<span class="small muted">Banka uygulamandaki alış kurlarını yaz. Birikiminin TL değeri bu kurlarla hesaplanır.</span>
+    <label>Dolar (₺)<input id="rUSD" inputmode="decimal" value="${inp(r.USD)}"></label>
+    <label>Euro (₺)<input id="rEUR" inputmode="decimal" value="${inp(r.EUR)}"></label>
+    <label>Gram altın (₺)<input id="rXAU" inputmode="decimal" value="${inp(r.XAU)}"></label>
+    <div class="acts"><button class="btn primary">Kaydet</button></div>`, () => {
+    ["USD","EUR","XAU"].forEach(a => { cfg.sav.rates[a] = parseNum(val("r" + a)); });
+    cfg.sav.ratesAt = Date.now(); saveCfg(); return true;
+  });
+}
+function sheetGoal(id){
+  const g = cfg.goals.find(x => x.id === id) || {};
+  openSheet(g.id ? "Hedefi düzenle" : "Hedef ekle", `<label>Hedefin adı<input id="gName" maxlength="30" placeholder="Örn. araba peşinatı" value="${esc(g.name || "")}"></label>
+    <div class="pair"><label>Hedef tutar (₺)<input id="gTarget" inputmode="decimal" value="${inp(g.target)}"></label>
+    <label>Şimdiye kadar biriken (₺)<input id="gSaved" inputmode="decimal" value="${inp(g.saved)}"></label></div>
+    <label>Her ay ayıracağın tutar (₺)<input id="gMonthly" inputmode="decimal" value="${inp(g.monthly)}"></label>
+    <span class="small muted">"Şimdiye kadar biriken" yalnızca hedefin ilerlemesini gösterir; hesaplarındaki parayı değiştirmez.</span>
+    <div class="acts">${g.id ? `<button type="button" class="btn danger" data-act="delGoal" data-id="${g.id}">Sil</button>` : ""}<button class="btn primary">Kaydet</button></div>`, () => {
+    const name = val("gName").trim(), target = parseNum(val("gTarget"));
+    if(!name || !target){ toast("Ad ve hedef tutar yazmalısın."); return false; }
+    const n = {id:g.id || "g" + uid(), name, target, saved:parseNum(val("gSaved")), monthly:parseNum(val("gMonthly"))};
+    const i = cfg.goals.findIndex(x => x.id === n.id);
+    if(i >= 0) cfg.goals[i] = n; else cfg.goals.push(n);
+    saveCfg(); return true;
+  });
+}
+function sheetFund(id){
+  const g = cfg.goals.find(x => x.id === id); if(!g) return;
+  openSheet(g.name + " için para ekle", `<label>Tutar (₺)<input id="fAmt" inputmode="decimal" value="${inp(g.monthly)}"></label>
+    <span class="small muted">Tutar TL hesabına ve bu ayın birikim payına da eklenir.</span>
+    <div class="acts"><button class="btn primary">Ekle</button></div>`, () => {
+    const amt = parseNum(val("fAmt")); if(!amt){ toast("Tutar yazmalısın."); return false; }
+    g.saved = (+g.saved || 0) + amt; cfg.sav.hold.TRY = (cfg.sav.hold.TRY || 0) + amt;
+    month(curKey()).items.push({id:uid(), ts:Date.now(), kind:"sav", amt, asset:"TRY", units:amt, goal:g.id});
+    saveCfg(); saveMonth(curKey());
+    toast(g.saved >= g.target ? g.name + " hedefine ulaştın!" : tl(amt) + " hedefe eklendi."); return true;
+  });
+}
+
+/* ---------- Sıfırlama ---------- */
+function resetMonth(){
+  const k = curKey(), m = month(k);
+  m.items = m.items.filter(it => it.kind === "sav");
+  /* Bu ay Ekle ekranından girilen taksitli alışverişler de silinir */
+  const before = cfg.pays.length;
+  cfg.pays = cfg.pays.filter(p => !(p.type === "taksit" && p.cat && (p.ts ? ym(new Date(p.ts)) === k : p.paid.length === 0)));
+  if(cfg.pays.length !== before) saveCfg();
+  saveMonth(k); toast("Bu ayın harcamaları silindi.");
+}
+function resetAll(){
+  /* Önce ekran ve bu cihaz hemen sıfırlanır; buluttaki kayıtlar arkadan silinir */
+  const known = Object.keys(months).concat([curKey(), prevOf(curKey())]);
+  cfg = defaults(); months = {}; entry = ""; aiText = ""; repKey = null; repDay = ""; planExtra = 0; selCat = ""; selBar = "";
+  try { Object.keys(localStorage).filter(k => k.startsWith(LS)).forEach(k => localStorage.removeItem(k)); } catch(e){}
+  known.forEach(k => { fetched[k] = true; });
+  persist("config", () => cfg);
+  render(); toast("Tüm veriler sıfırlandı.");
+  if(store.db){
+    const db = store.db, base = store.base, del = id => db.doc(base + "/" + id).delete().catch(() => {});
+    [...new Set(known)].forEach(k => del("m-" + k));
+    db.collection(base).get().then(q => { q.docs.forEach(d => { if(d.id.indexOf("m-") === 0) del(d.id); }); }).catch(() => {});
+  }
+}
+
+/* ---------- Yedek ---------- */
+async function doBackup(){
+  const o = {app:"kasa-defteri", v:1, at:Date.now(), data:{}};
+  try { Object.keys(localStorage).filter(k => k.startsWith(LS)).forEach(k => { o.data[k.slice(LS.length)] = JSON.parse(localStorage.getItem(k)); }); } catch(e){}
+  const name = "kasa-defteri-yedek-" + ymd(new Date()) + ".json", file = new File([JSON.stringify(o)], name, {type:"application/json"});
+  try { if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:"Kasa Defteri yedeği"}); return; } }
+  catch(e){ if(e && e.name === "AbortError") return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  toast("Yedek dosyası indirildi.");
+}
+function doRestore(file){
+  file.text().then(t => {
+    const o = JSON.parse(t);
+    if(!o || o.app !== "kasa-defteri" || !o.data || !o.data.config) throw new Error("bad");
+    Object.keys(localStorage).filter(k => k.startsWith(LS)).forEach(k => localStorage.removeItem(k));
+    Object.keys(o.data).forEach(k => lsSet(k, o.data[k]));
+    Object.keys(touched).forEach(k => delete touched[k]);
+    months = {}; cfg = defaults(); loadLocal(); closeSheet(); render(); toast("Yedek geri yüklendi.");
+  }).catch(() => toast("Bu dosya bir Kasa Defteri yedeği değil."));
+}
+
+/* ---------- Danışman yorumu ---------- */
+let asking = false;
+async function askAdvisor(){
+  if(asking) return; asking = true;
+  const show = t => { aiText = t; const o = $("#aiOut"); if(o){ o.hidden = false; o.textContent = t; } };
+  show("Danışman hesabına bakıyor…");
+  try{
+    const sample = window.claude && window.claude.use ? await window.claude.use("sample") : null;
+    if(!sample){ show("Ayrıntılı yorum şu an kullanılamıyor. Yukarıdaki değerlendirme geçerli."); asking = false; return; }
+    const o = overview(), a = advise(), k = o.k, ct = catTotals(k), pt = catTotals(prevOf(k)), di = debtInfo();
+    const data = {
+      ayin_gunu:o.d, aydaki_gun:o.mdays, toplam_gelir:o.inc, sabit_odemeler_toplami:o.fixed,
+      odemeler:cfg.pays.filter(p => isDue(p, k)).map(p => ({ad:p.name, tur:p.type, aylik:+p.amt, kalan_taksit:remaining(p), asgari:+p.min || undefined})),
+      toplam_kalan_borc:di.debt, birikim_yuzdesi:cfg.sav.pct, bu_ay_birikim_hedefi:o.target, bu_ay_birikime_eklenen:o.s.sav,
+      toplam_birikim_tl:savingsValue().total, hedefler:cfg.goals.map(g => ({ad:g.name, hedef:g.target, biriken:g.saved, aylik:g.monthly})),
+      harcama_butcesi:o.budget, bu_ay_harcanan:o.s.exp, kalan:o.left, gunluk_pay:o.daily,
+      kategoriler:cfg.cats.map(c => ({ad:c.name, bu_ay:ct.by[c.id] || 0, gecen_ay:pt.by[c.id] || 0, limit:+c.limit || undefined})),
+      saglik_puani:a.score, bu_ay_maas_yatti:o.got, devreden_para:o.carry
+    };
+    const prompt = "Sen dikkatli ve dürüst bir kişisel bütçe danışmanısın. Aşağıda bir kişinin bu ayki gelir gider verisi var (tutarlar TL). " +
+      "Türkçe, sade ve doğrudan yaz. Önce bir cümlelik genel durum, sonra en fazla 5 kısa ve somut öneri ver; her öneride veriden bir rakam kullan. " +
+      "Gereksiz övgü yapma, sorun varsa açıkça söyle. Belirli bir yatırım ürünü, hisse, döviz ya da altın alım satım önerisi verme; yalnızca bütçe, borç ödeme sırası, hedefler ve birikim alışkanlığı hakkında konuş. " +
+      "Biçimlendirme işareti (yıldız, kare, tablo) kullanma; önerileri 1. 2. 3. diye numarala.\n\nVERİ:\n" + JSON.stringify(data);
+    const res = await sample(prompt, {onText: ({text}) => { if(text) show(text); }});
+    show(res && res.text ? res.text : aiText);
+  }catch(e){
+    show(e && e.code === "rate_limited" ? "Çok sık soruldu. Biraz sonra tekrar dene." : "Danışmana ulaşılamadı. Yukarıdaki değerlendirme geçerli.");
+  }
+  asking = false;
+}
+
+/* ---------- Olaylar ---------- */
+function addExpense(catId){
+  const amt = parseNum(entry);
+  if(!amt){ toast("Önce tutarı yaz."); return; }
+  const k = curKey(), note = $("#note") ? $("#note").value.trim() : "", n = $("#inst") ? parseInt($("#inst").value, 10) || 1 : 1;
+  let msg;
+  if(n > 1){
+    const per = Math.round(amt / n * 100) / 100, card = cfg.pays.find(p => p.type === "kart");
+    cfg.pays.push({id:uid(), type:"taksit", name:(note || catName(catId)) + " (" + n + " taksit)", amt:per, day:card ? +card.day || 1 : new Date().getDate(), total:n, paid:[], cat:catId, ts:Date.now()});
+    saveCfg(); msg = n + " × " + tl(per) + " taksit olarak Borçlar'a eklendi.";
+  } else {
+    month(k).items.push({id:uid(), ts:Date.now(), kind:"exp", amt, cat:catId, note});
+    saveMonth(k); msg = tl(amt) + " " + catName(catId) + " olarak kaydedildi.";
+  }
+  entry = ""; if($("#note")){ $("#note").value = ""; $("#inst").value = "1"; }
+  const c = catOf(catId), spent = catTotals(k).by[catId] || 0;
+  if(c && +c.limit && spent >= c.limit) msg = c.name + " limitini aştın: " + tl(spent) + " / " + tl(+c.limit);
+  else if(c && +c.limit && spent >= c.limit * .8) msg = c.name + " limitine yaklaştın: " + tl(spent) + " / " + tl(+c.limit);
+  toast(msg); render();
+}
+function pressKey(x){
+  if(x === "sil") entry = entry.slice(0, -1);
+  else if(x === ","){ if(!entry.includes(",")) entry = (entry || "0") + ","; }
+  else {
+    const dec = entry.split(",")[1];
+    if(dec !== undefined && dec.length >= 2) return;
+    if(entry.replace(",", "").length >= 9) return;
+    entry = entry === "0" ? x : entry + x;
+  }
+  const e = $("#entry"); if(e) e.textContent = (entry || "0") + " ₺";
+}
+document.addEventListener("click", ev => {
+  const key = ev.target.closest("[data-key]"); if(key) return pressKey(key.dataset.key);
+  const cat = ev.target.closest("[data-cat]"); if(cat) return addExpense(cat.dataset.cat);
+  if(ev.target.id === "veil") return closeSheet();
+  const b = ev.target.closest("[data-act]"); if(!b) return;
+  const act = b.dataset.act, id = b.dataset.id, k = curKey();
+  if(act === "close") closeSheet();
+  else if(act === "settings") sheetSettings();
+  else if(act === "income") sheetIncome();
+  else if(act === "cats") sheetCats();
+  else if(act === "rates") sheetRates();
+  else if(act === "addPay") sheetPay();
+  else if(act === "editPay") sheetPay(id);
+  else if(act === "addSav") sheetSav();
+  else if(act === "editHold") sheetHold(id);
+  else if(act === "addGoal") sheetGoal();
+  else if(act === "editGoal") sheetGoal(id);
+  else if(act === "fundGoal") sheetFund(id);
+  else if(act === "delGoal"){ cfg.goals = cfg.goals.filter(g => g.id !== id); saveCfg(); closeSheet(); render(); }
+  else if(act === "ask") askAdvisor();
+  else if(act === "backup") doBackup();
+  else if(act === "gotSalary"){ month(k).got = true; saveMonth(k); toast(tl(incomeTotal()) + " gelir bu aya eklendi."); render(); }
+  else if(act === "seg"){ selCat = selCat === id ? "" : id; render(); }
+  else if(act === "bar"){ selBar = id; render(); }
+  else if(act === "askResetMonth") sheetConfirm("Bu ayın harcamaları silinsin mi?", "Bu ay girdiğin bütün harcamalar ve bu ay eklediğin taksitli alışverişler silinir. Gelir, diğer borçlar, birikim ve geçmiş aylar olduğu gibi kalır. Geri alınamaz.", "doResetMonth");
+  else if(act === "askResetAll") sheetConfirm("Tüm veriler silinsin mi?", "Gelir, kategoriler, taksitler, hedefler, birikim ve bütün ayların harcama geçmişi silinir. Uygulama ilk açıldığı haline döner. Geri alınamaz.", "doResetAll");
+  else if(act === "doResetMonth"){ resetMonth(); closeSheet(); render(); }
+  else if(act === "doResetAll"){ closeSheet(); resetAll(); }
+  else if(act === "addRow") $("#rows").insertAdjacentHTML("beforeend", $("#sheetForm").dataset.rowTpl);
+  else if(act === "rmRow") b.closest("[data-row]").remove();
+  else if(act === "delPay"){ cfg.pays = cfg.pays.filter(p => p.id !== id); saveCfg(); closeSheet(); render(); }
+  else if(act === "pay"){
+    const p = cfg.pays.find(x => x.id === id); if(!p) return;
+    if(p.paid.includes(k)) p.paid = p.paid.filter(x => x !== k); else p.paid.push(k);
+    saveCfg(); render();
+  }
+  else if(act === "delItem"){
+    const mk = b.dataset.k || k, m = month(mk), it = m.items.find(x => x.id === id); if(!it) return;
+    if(it.kind === "sav"){
+      cfg.sav.hold[it.asset] = Math.max(0, (cfg.sav.hold[it.asset] || 0) - it.units);
+      const g = it.goal ? cfg.goals.find(x => x.id === it.goal) : null; if(g) g.saved = Math.max(0, (+g.saved || 0) - it.amt);
+    }
+    m.items = m.items.filter(x => x.id !== id); saveMonth(mk); if(it.kind === "sav") saveCfg(); render();
+  }
+  else if(act === "mPrev"){ repKey = prevOf(repKey || k); repDay = ""; selCat = ""; render(); }
+  else if(act === "mNext"){ if((repKey || k) < k){ repKey = ym(addMonths(keyDate(repKey), 1)); repDay = ""; selCat = ""; render(); } }
+  else if(act === "modeKat"){ repMode = "kat"; repDay = ""; render(); }
+  else if(act === "modeGun"){ repMode = "gun"; render(); }
+  else if(act === "clearDay"){ repDay = ""; render(); }
+});
+$("#sheetForm").addEventListener("submit", ev => { ev.preventDefault(); if(onSubmit && onSubmit()){ closeSheet(); render(); } });
+document.addEventListener("change", ev => {
+  const t = ev.target;
+  if(t.id === "fRestore"){ if(t.files && t.files[0]) doRestore(t.files[0]); return; }
+  if(t.id === "pct"){
+    const raw = parseFloat(String(t.value).replace(",", "."));
+    cfg.sav.pct = Math.min(100, Math.max(0, isFinite(raw) ? raw : 0)); saveCfg(); render();
+  } else if(t.id === "extra"){ planExtra = parseNum(t.value); render(); }
+  else if(t.id === "repDate"){
+    const v = t.value;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= ymd(new Date())){ repDay = v; repKey = v.slice(0, 7); repMode = "gun"; } else repDay = "";
+    render();
+  }
+});
+document.addEventListener("keydown", ev => { if(ev.key === "Escape") closeSheet(); });
+window.addEventListener("hashchange", route);
+
+setSync("load"); loadLocal(); route(); connect();
+if("serviceWorker" in navigator) window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+</script>
+</body>
+</html>
